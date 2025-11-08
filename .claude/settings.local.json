@@ -1,0 +1,14 @@
+{
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "gemini-google-search",
+    "gemini-cli",
+    "playwright",
+    "context7"
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)"
+    ]
+  }
+}
