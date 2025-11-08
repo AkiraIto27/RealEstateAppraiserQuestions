@@ -9,17 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: true }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: npm i csv-parse
-      - run: node scripts/build.js
-        env:
-          CONTENT_VERSION: "2025.11.0" # 公開時期に合わせて更新
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: ./dist }
+      - run: npm ci || npm i
+      - run: npm run build # dist/ に生成
+      - name: Commit dist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist
+          git diff --cached --quiet || git commit -m "chore: build dist [skip ci]"
+          git push
   deploy:
     needs: build
-    permissions: { pages: write, id-token: write }
+    permissions: { contents: write, pages: write, id-token: write }
     runs-on: ubuntu-latest
     steps:
       - uses: actions/deploy-pages@v4
