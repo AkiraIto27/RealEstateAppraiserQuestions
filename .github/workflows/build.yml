@@ -1,0 +1,25 @@
+name: Build & Deploy
+on:
+  push: { branches: [main] } # CSV更新で自動
+  workflow_dispatch: # 手動実行も可能
+  schedule:
+    - cron: "0 3 1 10 *" # 例: 毎年10/1 12:00 JST 相当
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i csv-parse
+      - run: node scripts/build.js
+        env:
+          CONTENT_VERSION: "2025.11.0" # 公開時期に合わせて更新
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: ./dist }
+  deploy:
+    needs: build
+    permissions: { pages: write, id-token: write }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4
