@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.1.0",
+  "content_version": "2025.11.08",
+  "generated_at": "2025-11-08T18:57:09.454Z",
+  "bundles": [
+    {
+      "id": "r03",
+      "title": "令和3年 全80問",
+      "year": 2021,
+      "items": 80,
+      "url": "/bundles/r03.jsonl.gz",
+      "size": 31492,
+      "sha256": "8c33c8ff3ed3f00c26e563a378fa5402d3c0ee80d108fb4f4a8e80e634d46506",
+      "etag": "W/\"r03@2025.11.08\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
+    },
+    {
+      "id": "r04",
+      "title": "令和4年 全80問",
+      "year": 2022,
+      "items": 80,
+      "url": "/bundles/r04.jsonl.gz",
+      "size": 31023,
+      "sha256": "ea8f7e10cf01b67891014f6aa60dba45e1817ea5f1f4e28c0765106802637da1",
+      "etag": "W/\"r04@2025.11.08\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
+    },
+    {
+      "id": "r05",
+      "title": "令和5年 全80問",
+      "year": 2023,
+      "items": 80,
+      "url": "/bundles/r05.jsonl.gz",
+      "size": 34336,
+      "sha256": "13fc2ec28624c8945b8201d67cf23dc9bf9e8c19a2624543be710d3da01159d3",
+      "etag": "W/\"r05@2025.11.08\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
+    },
+    {
+      "id": "r06",
+      "title": "令和6年 全80問",
+      "year": 2024,
+      "items": 80,
+      "url": "/bundles/r06.jsonl.gz",
+      "size": 32107,
+      "sha256": "abab5c19eb19e89d04b348acf57068ff50c2a63643fe310aaf9772319ee92601",
+      "etag": "W/\"r06@2025.11.08\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
+    },
+    {
+      "id": "r07",
+      "title": "令和7年 全80問",
+      "year": 2025,
+      "items": 80,
+      "url": "/bundles/r07.jsonl.gz",
+      "size": 34844,
+      "sha256": "082ac02e1ed850054ce799c682af6e3a499ab8a3a898f7d97813b5dd41f77339",
+      "etag": "W/\"r07@2025.11.08\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
+    }
+  ]
+}
