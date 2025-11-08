@@ -4,6 +4,8 @@ import path from 'node:path';
 import { parse } from 'csv-parse/sync';
 import { createGzip } from 'node:zlib';
 import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
 const DATA_DIR = './data';
 const DIST_DIR = './dist';
@@ -44,7 +46,7 @@ for (const [yy, list] of grouped.entries()) {
 
   // gzipで出力
   const outPath = path.join(BUNDLES_DIR, `${yy}.jsonl.gz`);
-  gzipWriteString(jsonl, outPath);
+  await gzipWriteString(jsonl, outPath);
 
   // ハッシュ計算
   const buf = fs.readFileSync(outPath);
@@ -143,12 +145,9 @@ function guessGregorian(era, eraYear) {
   return undefined;
 }
 
-function gzipWriteString(s, outPath) {
+async function gzipWriteString(s, outPath) {
+  const src = Readable.from([s]);
   const gz = createGzip();
   const ws = fs.createWriteStream(outPath);
-  const src = new (require('stream').Readable)({ read() { } });
-  return new Promise((resolve, reject) => {
-    src.push(s); src.push(null);
-    src.pipe(gz).pipe(ws).on('finish', resolve).on('error', reject);
-  });
+  await pipeline(src, gz, ws);
 }
