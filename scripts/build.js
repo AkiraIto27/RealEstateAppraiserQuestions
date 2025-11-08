@@ -1,4 +1,3 @@
-// scripts/build.js
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse } from 'csv-parse/sync';
@@ -14,47 +13,98 @@ const BUNDLES_DIR = path.join(DIST_DIR, 'bundles');
 const contentVersion = process.env.CONTENT_VERSION || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
 const generatedAt = new Date().toISOString();
 
+// 出力ディレクトリ作成
 fs.mkdirSync(BUNDLES_DIR, { recursive: true });
 
-// 1) data配下のCSVを列挙（rYY_*.csv）
-const files = fs.readdirSync(DATA_DIR)
-  .filter(f => /^r\d{2}_(gyousei|kanteihyoka)\.csv$/.test(f))
-  .sort();
+// ----- 1) data配下のCSVを列挙（まずは全部）
+const allEntries = fs.readdirSync(DATA_DIR).sort();
+const allCsvs = allEntries.filter(f => /\.csv$/i.test(f));
+console.log(`[build] data entries: ${allEntries.length}`, allEntries);
+console.log(`[build] csv files found: ${allCsvs.length}`, allCsvs);
 
-// 2) 年度ごとにグルーピング
+// 想定パターンにマッチ（rYY_gyousei|kanteihyoka）
+const CSV_PATTERN = /^r\d{2}_(gyousei|kanteihyoka)\.csv$/i;
+const files = allCsvs.filter(f => CSV_PATTERN.test(f)).sort();
+const unmatched = allCsvs.filter(f => !CSV_PATTERN.test(f));
+console.log(`[build] matched csv: ${files.length}`, files);
+if (unmatched.length) console.warn(`[build] UNMATCHED csv (ignored): ${unmatched.length}`, unmatched);
+
+if (files.length === 0) {
+  console.warn('[build] No matching CSVs (expected like r03_gyousei.csv / r03_kanteihyoka.csv). Build continues to write empty manifest.');
+}
+
+// ----- 2) 年度ごとにグルーピング
 const grouped = new Map(); // key: rYY, val: string[] files
 for (const f of files) {
   const yy = f.slice(0, 3); // 'r07'
   if (!grouped.has(yy)) grouped.set(yy, []);
   grouped.get(yy).push(f);
 }
+console.log(`[build] years detected: ${grouped.size}`, Array.from(grouped.keys()));
 
 const bundles = [];
+const t0 = Date.now();
 
+// ----- 3) 年度ごとに処理
 for (const [yy, list] of grouped.entries()) {
+  console.log(`\n[build] ==== Year ${yy} ====`);
+  console.log(`[build] files for ${yy}:`, list);
+
   let items = [];
   for (const f of list) {
-    const csv = fs.readFileSync(path.join(DATA_DIR, f), 'utf8');
-    const rows = parse(csv, { columns: true, skip_empty_lines: true, relax_quotes: true });
-    items = items.concat(rows.map((r, i) => normalizeRow(r, i, yy, f)));
+    const p = path.join(DATA_DIR, f);
+    console.log(`[build] read: ${p}`);
+    const csv = fs.readFileSync(p, 'utf8');
+    let rows;
+    try {
+      rows = parse(csv, { columns: true, skip_empty_lines: true, relax_quotes: true });
+    } catch (e) {
+      console.error(`[build] CSV parse error in ${f}:`, e.message);
+      // 解析失敗時は詳細を出力して終了
+      throw e;
+    }
+    console.log(`[build] parsed rows from ${f}: ${rows.length}`);
+
+    // 軽いバリデーション（任意）
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const line = i + 2; // ヘッダ1行目
+      for (let k = 1; k <= 5; k++) {
+        if (typeof r[`choice${k}`] === 'undefined') {
+          throw new Error(`${f}:${line} choice${k} 列がありません（ヘッダ不足/列ズレの可能性）`);
+        }
+      }
+      const ans = Number(r.answer);
+      if (!(ans >= 1 && ans <= 5)) {
+        throw new Error(`${f}:${line} answer=${r.answer} が不正（1..5）`);
+      }
+    }
+
+    const normalized = rows.map((r, i) => normalizeRow(r, i, yy, f));
+    items = items.concat(normalized);
+    console.log(`[build] normalized items added from ${f}: ${normalized.length} (total: ${items.length})`);
   }
 
-  // question_noなどの安定順に並べる（任意）
+  // 並び替え（任意）
   items.sort((a, b) => (a.subject || '').localeCompare(b.subject || '', 'ja') || a.question_no - b.question_no);
+  console.log(`[build] sorted items for ${yy}: ${items.length}`);
 
+  // JSONL化
   const jsonl = items.map(o => JSON.stringify(o)).join('\n');
 
   // gzipで出力
   const outPath = path.join(BUNDLES_DIR, `${yy}.jsonl.gz`);
+  console.log(`[build] write gzip: ${outPath}`);
   await gzipWriteString(jsonl, outPath);
 
   // ハッシュ計算
   const buf = fs.readFileSync(outPath);
   const sha256 = createHash('sha256').update(buf).digest('hex');
+  console.log(`[build] wrote ${outPath} size=${buf.length} bytes sha256=${sha256}`);
 
   // manifestエントリ
   const any = items[0] || {};
-  bundles.push({
+  const entry = {
     id: yy,                                    // r07
     title: toTitle(any.era, any.era_year, items.length),
     year: Number(any.year),
@@ -64,10 +114,12 @@ for (const [yy, list] of grouped.entries()) {
     sha256,
     etag: `W/"${yy}@${contentVersion}"`,
     updated_at: latestUpdatedAt(items) || generatedAt
-  });
+  };
+  bundles.push(entry);
+  console.log('[build] manifest entry:', entry);
 }
 
-// manifest.json
+// ----- 4) manifest.json を出力
 const manifest = {
   schema_version: '1.1.0',
   content_version: contentVersion,
@@ -75,6 +127,11 @@ const manifest = {
   bundles
 };
 fs.writeFileSync(path.join(DIST_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+
+const dt = Date.now() - t0;
+console.log(`\n[build] manifest written: ${path.join(DIST_DIR, 'manifest.json')}`);
+console.log(`[build] bundles: ${bundles.length} (ids: ${bundles.map(b => b.id).join(', ') || '-'})`);
+console.log(`[build] done in ${dt} ms`);
 
 // ---------- helpers ----------
 function normalizeRow(r, idx, yy, filename) {
