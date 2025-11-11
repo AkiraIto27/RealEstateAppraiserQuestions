@@ -119,8 +119,6 @@ manifest.json（例・抜粋）
 
 動作確認（curl）
 
-<USER>/<REPO> は自分のアカウントに置き換え（例：akiraito27/RealEstateAppraiserQuestions）。
-
 # manifest 取得
 curl -sS --compressed https://<USER>.github.io/<REPO>/manifest.json | jq .
 
