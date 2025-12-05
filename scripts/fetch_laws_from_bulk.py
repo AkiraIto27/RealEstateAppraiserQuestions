@@ -24,7 +24,7 @@ LAWS_DIR = "laws"         # 抽出した法令XMLを入れる
 DATA_DIR = "data"         # rYY_*.csv があるディレクトリ
 
 
-# 「法律っぽい名前だが、実際は評価手法等で法令XMLには存在しないもの」
+# 法律っぽいけど実際は評価手法などで、法令XMLの取得対象外としたいもの
 IGNORE_LIKE_LAW_TOPICS: Set[str] = {
     "DCF法",
     "収益還元法",
@@ -32,17 +32,21 @@ IGNORE_LIKE_LAW_TOPICS: Set[str] = {
 }
 
 # topic名 → 実際の法令名（複数可）のマッピング
+# ※キーは「topic全体」だけでなく、split_compound_topic() 後の piece として
+#    出てくる文字列とも一致するように書く
 MANUAL_TOPIC_TO_LAWS = {
-    # 複合 topic の展開
+    # 「金融商品取引法、投資信託及び投資法人に関する法律及び資産の流動化に関する法律」
+    # の後半部分の piece がこの文字列
     "投資信託及び投資法人に関する法律及び資産の流動化に関する法律": [
         "投資信託及び投資法人に関する法律",
         "資産の流動化に関する法律",
     ],
+    # 「河川法、海岸法及び公有水面埋立法」の後半部分の piece
     "海岸法及び公有水面埋立法": [
         "海岸法",
         "公有水面埋立法",
     ],
-    # topic側略称 → 正式名称
+    # topic 側の略称 → 正式名称（e-Gov の LawTitle）
     "障害者等の移動等の円滑化の促進に関する法律": [
         "高齢者、障害者等の移動等の円滑化の促進に関する法律",
     ],
@@ -147,16 +151,29 @@ def extract_law_names_from_topics(all_topics: Set[str]) -> Set[str]:
         if t in IGNORE_LIKE_LAW_TOPICS:
             continue
 
-        # 手動マッピング優先
+        # topic 全体が MANUAL マッピング対象なら、それを採用して次へ
         if t in MANUAL_TOPIC_TO_LAWS:
             for ln in MANUAL_TOPIC_TO_LAWS[t]:
                 law_names.add(ln)
             continue
 
-        # topic を分割して「法／法律」で終わるものだけ拾う
+        # topic を分割して piece 単位で処理
         for piece in split_compound_topic(t):
+
+            # piece 自体が無視対象ならスキップ
+            if piece in IGNORE_LIKE_LAW_TOPICS:
+                continue
+
+            # piece が MANUAL マッピング対象なら、そのマッピングを使う
+            if piece in MANUAL_TOPIC_TO_LAWS:
+                for ln in MANUAL_TOPIC_TO_LAWS[piece]:
+                    law_names.add(ln)
+                continue
+
+            # それ以外は単純に「法／法律」で終わるものだけ拾う
             if not (piece.endswith("法") or piece.endswith("法律")):
                 continue
+
             law_names.add(piece)
 
     return law_names
