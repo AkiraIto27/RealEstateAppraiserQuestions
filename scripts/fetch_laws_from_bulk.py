@@ -12,11 +12,41 @@ from typing import Set, List
 import requests
 
 
+# ==================================
+# 設定
+# ==================================
+
+# e-Gov bulkdownload（全法令 XML のみ）
 ZIP_URL = "https://laws.e-gov.go.jp/bulkdownload?file_section=1&only_xml_flag=true"
 
-RAW_ZIP_DIR = "laws_raw"
-LAWS_DIR = "laws"
-DATA_DIR = "data"  # rYY_*.csv がある場所
+RAW_ZIP_DIR = "laws_raw"  # 大きいZIP（Git管理しない）
+LAWS_DIR = "laws"         # 抽出した法令XMLを入れる
+DATA_DIR = "data"         # rYY_*.csv があるディレクトリ
+
+
+# 「法律っぽい名前だが、実際は評価手法等で法令XMLには存在しないもの」
+IGNORE_LIKE_LAW_TOPICS: Set[str] = {
+    "DCF法",
+    "収益還元法",
+    "取引事例比較法",
+}
+
+# topic名 → 実際の法令名（複数可）のマッピング
+MANUAL_TOPIC_TO_LAWS = {
+    # 複合 topic の展開
+    "投資信託及び投資法人に関する法律及び資産の流動化に関する法律": [
+        "投資信託及び投資法人に関する法律",
+        "資産の流動化に関する法律",
+    ],
+    "海岸法及び公有水面埋立法": [
+        "海岸法",
+        "公有水面埋立法",
+    ],
+    # topic側略称 → 正式名称
+    "障害者等の移動等の円滑化の促進に関する法律": [
+        "高齢者、障害者等の移動等の円滑化の促進に関する法律",
+    ],
+}
 
 
 # ==================================
@@ -33,9 +63,8 @@ def sanitize_filename(name: str) -> str:
 
 def shorten_law_name(full_name: str) -> str:
     """
-    e-Govの LawName は「建築基準法（昭和二十五年法律第二百一号）」のように
-    括弧付きのフル名称が多いので、「（」or "(" より前だけを取り出して
-    topic 側とマッチさせる。
+    「建築基準法（昭和二十五年法律第二百一号）」→「建築基準法」
+    のように、括弧より前だけに短縮する。
     """
     short = re.split(r"[（(]", full_name, maxsplit=1)[0]
     return short.strip()
@@ -46,6 +75,12 @@ def shorten_law_name(full_name: str) -> str:
 # ==================================
 
 def calc_exam_and_law_years():
+    """
+    - 試験年度: 今年（西暦）
+    - 適用法令年度: 今年 - 1
+    - law_cutoff_date: {適用法令年度}-09-01
+    - 令和年: 試験年度 - 2018
+    """
     today = date.today()
     exam_year = today.year        # 例: 2025
     law_year = exam_year - 1      # 例: 2024
@@ -67,7 +102,7 @@ def collect_topics_from_csv(path: str) -> Set[str]:
 
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        if "topic" not in reader.fieldnames:
+        if "topic" not in (reader.fieldnames or []):
             raise ValueError(f"'topic' 列がありません: {path}")
 
         for row in reader:
@@ -82,18 +117,11 @@ def collect_topics_from_csv(path: str) -> Set[str]:
 # topic → 法律名抽出
 # ==================================
 
-MANUAL_TOPIC_TO_LAWS = {
-    # 必要になったらここにマッピングを足していく想定
-    # 例:
-    # "固定資産税": ["地方税法"],
-    # "不動産の表示に関する登記": ["不動産登記法"],
-}
-
 def split_compound_topic(topic: str) -> List[str]:
     """
     「金融商品取引法、投資信託及び投資法人に関する法律及び資産の流動化に関する法律」
-    みたいなものをまず「、」で分ける。
-    「A法及びB法」みたいなパターンは、あとで MANUAL_TOPIC_TO_LAWS で対処していく想定。
+    などを、まず「、」で粗く分割する。
+    （「A法及びB法」のようなものは MANUAL_TOPIC_TO_LAWS で補正する方針）
     """
     parts = re.split("、", topic)
     results = []
@@ -105,9 +133,19 @@ def split_compound_topic(topic: str) -> List[str]:
 
 
 def extract_law_names_from_topics(all_topics: Set[str]) -> Set[str]:
+    """
+    topic集合から「法令として扱いたい名前」だけを抽出する。
+    - IGNORE_LIKE_LAW_TOPICS はスキップ
+    - MANUAL_TOPIC_TO_LAWS があればそれを優先
+    - それ以外は「法」「法律」で終わるもののみ採用
+    """
     law_names: Set[str] = set()
 
     for t in all_topics:
+
+        # 評価手法など「法律ではないもの」はスキップ
+        if t in IGNORE_LIKE_LAW_TOPICS:
+            continue
 
         # 手動マッピング優先
         if t in MANUAL_TOPIC_TO_LAWS:
@@ -129,6 +167,10 @@ def extract_law_names_from_topics(all_topics: Set[str]) -> Set[str]:
 # ==================================
 
 def download_bulk_zip(law_cutoff_date: str) -> str:
+    """
+    bulkdownload ZIP を laws_raw/{LAW_CUTOFF_DATE}.zip に保存
+    （すでにあれば再ダウンロードしない）
+    """
     ensure_dir(RAW_ZIP_DIR)
     zip_path = os.path.join(RAW_ZIP_DIR, f"{law_cutoff_date}.zip")
 
@@ -150,13 +192,14 @@ def download_bulk_zip(law_cutoff_date: str) -> str:
 
 
 # ==================================
-# XML から LawName を取り出す
+# XML から法令名を取り出す
 # ==================================
 
 def extract_law_name_from_xml(xml_bytes: bytes) -> str | None:
     """
     bulkdownload の法令XMLから法令名を取り出す。
-    通常は <LawTitle> に入っているが、念のため LawName もフォールバックで見る。
+    通常は <LawTitle> に入っている。
+    念のため LawName があればそれもフォールバックで見る。
     """
     try:
         root = ET.fromstring(xml_bytes)
@@ -171,27 +214,21 @@ def extract_law_name_from_xml(xml_bytes: bytes) -> str | None:
         if not isinstance(tag, str):
             continue
 
-        # LawTitle（法令名）を優先
         if tag.endswith("LawTitle") and el.text:
             txt = el.text.strip()
             if txt:
                 law_title = txt
 
-        # 念のため LawName も拾う（API由来XMLを扱う場合のフォールバック）
         if tag.endswith("LawName") and el.text:
             txt = el.text.strip()
             if txt:
                 law_name = txt
 
-    # LawTitle があればそれを使う
     if law_title:
         return law_title
-    # なければ LawName を返す
     if law_name:
         return law_name
-
     return None
-
 
 
 # ==================================
@@ -203,6 +240,14 @@ def extract_target_laws_from_zip(
     law_cutoff_date: str,
     target_names: Set[str],
 ) -> None:
+    """
+    bulk ZIP 内の XML を走査し、
+    - LawTitle / LawName（full）
+    - そこから切り出した short_name
+    のどちらかが target_names に含まれるものだけを
+    laws/{LAW_CUTOFF_DATE}/ に保存する。
+    併せて _index.txt にターゲット／ヒット／Missing を出力。
+    """
     out_dir = os.path.join(LAWS_DIR, law_cutoff_date)
     ensure_dir(out_dir)
 
@@ -224,7 +269,7 @@ def extract_target_laws_from_zip(
 
             short_name = shorten_law_name(full_name)
 
-            # フル名称 or 省略名のどちらかが target_names に入っていればヒットとみなす
+            # full_name / short_name のどちらかが target に含まれればヒット
             if (full_name not in target_names) and (short_name not in target_names):
                 continue
 
@@ -239,7 +284,7 @@ def extract_target_laws_from_zip(
 
             print(f"Extracted: {full_name} -> {out_path}")
 
-    # インデックスファイルを書いて後から確認できるようにする
+    # インデックスファイルで状況を記録
     index_path = os.path.join(out_dir, "_index.txt")
     with open(index_path, "w", encoding="utf-8") as f:
         f.write(f"law_cutoff_date: {law_cutoff_date}\n")
