@@ -19,12 +19,26 @@ LAWS_DIR = "laws"
 DATA_DIR = "data"  # rYY_*.csv がある場所
 
 
+# ==================================
+# Utility
+# ==================================
+
 def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
 def sanitize_filename(name: str) -> str:
     return re.sub(r'[\\/:"*?<>|]+', "_", name)
+
+
+def shorten_law_name(full_name: str) -> str:
+    """
+    e-Govの LawName は「建築基準法（昭和二十五年法律第二百一号）」のように
+    括弧付きのフル名称が多いので、「（」or "(" より前だけを取り出して
+    topic 側とマッチさせる。
+    """
+    short = re.split(r"[（(]", full_name, maxsplit=1)[0]
+    return short.strip()
 
 
 # ==================================
@@ -70,11 +84,17 @@ def collect_topics_from_csv(path: str) -> Set[str]:
 
 MANUAL_TOPIC_TO_LAWS = {
     # 必要になったらここにマッピングを足していく想定
+    # 例:
     # "固定資産税": ["地方税法"],
+    # "不動産の表示に関する登記": ["不動産登記法"],
 }
 
 def split_compound_topic(topic: str) -> List[str]:
-    # 全角読点で素朴に分割
+    """
+    「金融商品取引法、投資信託及び投資法人に関する法律及び資産の流動化に関する法律」
+    みたいなものをまず「、」で分ける。
+    「A法及びB法」みたいなパターンは、あとで MANUAL_TOPIC_TO_LAWS で対処していく想定。
+    """
     parts = re.split("、", topic)
     results = []
     for p in parts:
@@ -160,7 +180,8 @@ def extract_target_laws_from_zip(
     out_dir = os.path.join(LAWS_DIR, law_cutoff_date)
     ensure_dir(out_dir)
 
-    found: Set[str] = set()
+    found_full: Set[str] = set()
+    found_short: Set[str] = set()
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         for info in zf.infolist():
@@ -171,44 +192,53 @@ def extract_target_laws_from_zip(
             with zf.open(info) as f:
                 xml_bytes = f.read()
 
-            law_name = extract_law_name_from_xml(xml_bytes)
-            if not law_name:
+            full_name = extract_law_name_from_xml(xml_bytes)
+            if not full_name:
                 continue
 
-            if law_name not in target_names:
+            short_name = shorten_law_name(full_name)
+
+            # フル名称 or 省略名のどちらかが target_names に入っていればヒットとみなす
+            if (full_name not in target_names) and (short_name not in target_names):
                 continue
 
-            found.add(law_name)
+            found_full.add(full_name)
+            found_short.add(short_name)
 
-            out_name = f"{sanitize_filename(law_name)}_{sanitize_filename(info.filename)}"
+            out_name = f"{sanitize_filename(short_name)}_{sanitize_filename(info.filename)}"
             out_path = os.path.join(out_dir, out_name)
 
             with open(out_path, "wb") as out:
                 out.write(xml_bytes)
 
-            print(f"Extracted: {law_name} -> {out_path}")
+            print(f"Extracted: {full_name} -> {out_path}")
 
-    # 必ず index ファイルを出力して、後から確認できるようにする
+    # インデックスファイルを書いて後から確認できるようにする
     index_path = os.path.join(out_dir, "_index.txt")
     with open(index_path, "w", encoding="utf-8") as f:
         f.write(f"law_cutoff_date: {law_cutoff_date}\n")
+
         f.write("\n[Target law names from topics]\n")
         for name in sorted(target_names):
             f.write(f"- {name}\n")
 
-        f.write("\n[Found law names in bulk XML]\n")
-        for name in sorted(found):
+        f.write("\n[Found law full names in bulk XML]\n")
+        for name in sorted(found_full):
             f.write(f"- {name}\n")
 
-        missing = target_names - found
-        f.write("\n[Missing law names]\n")
+        f.write("\n[Found law short names]\n")
+        for name in sorted(found_short):
+            f.write(f"- {name}\n")
+
+        missing = target_names - found_short
+        f.write("\n[Missing law names (by short name)]\n")
         for name in sorted(missing):
             f.write(f"- {name}\n")
 
     print(f"Written index file: {index_path}")
 
     if missing:
-        print("⚠ Missing law names (see _index.txt for details)")
+        print("⚠ Some law names were not found (see _index.txt)")
     else:
         print("All target laws extracted.")
 
