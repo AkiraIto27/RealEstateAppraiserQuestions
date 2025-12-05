@@ -1,0 +1,40 @@
+name: Fetch laws snapshot from e-Gov
+
+on:
+    schedule:
+        # 毎年 9月1日 00:00 UTC に実行
+        # 日本時間では 9月1日 09:00 JST
+        - cron: "0 0 1 9 *"
+    # 手動実行もできるように
+    workflow_dispatch: {}
+
+jobs:
+    fetch-laws:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install requests
+
+            - name: Run fetch_laws_from_bulk.py
+              run: |
+                  python scripts/fetch_laws_from_bulk.py
+
+            # （任意）成果物として laws/ と laws_raw/ をアップロードしたいなら
+            # - name: Upload laws as artifact
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #     name: laws-snapshot
+            #     path: |
+            #       laws/
+            #       laws_raw/
