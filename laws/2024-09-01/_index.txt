@@ -33,9 +33,11 @@ law_cutoff_date: 2024-09-01
 - 金融商品取引法
 - 障害者等の移動等の円滑化の促進に関する法律
 
-[Found law names in bulk XML]
+[Found law full names in bulk XML]
 
-[Missing law names]
+[Found law short names]
+
+[Missing law names (by short name)]
 - DCF法
 - マンションの建替え等の円滑化に関する法律
 - 不動産の鑑定評価に関する法律
