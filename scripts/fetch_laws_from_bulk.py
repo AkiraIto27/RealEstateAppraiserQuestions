@@ -154,18 +154,44 @@ def download_bulk_zip(law_cutoff_date: str) -> str:
 # ==================================
 
 def extract_law_name_from_xml(xml_bytes: bytes) -> str | None:
+    """
+    bulkdownload の法令XMLから法令名を取り出す。
+    通常は <LawTitle> に入っているが、念のため LawName もフォールバックで見る。
+    """
     try:
         root = ET.fromstring(xml_bytes)
     except ET.ParseError:
         return None
 
+    law_title = None
+    law_name = None
+
     for el in root.iter():
         tag = el.tag
-        if isinstance(tag, str) and tag.endswith("LawName"):
-            text = (el.text or "").strip()
-            if text:
-                return text
+        if not isinstance(tag, str):
+            continue
+
+        # LawTitle（法令名）を優先
+        if tag.endswith("LawTitle") and el.text:
+            txt = el.text.strip()
+            if txt:
+                law_title = txt
+
+        # 念のため LawName も拾う（API由来XMLを扱う場合のフォールバック）
+        if tag.endswith("LawName") and el.text:
+            txt = el.text.strip()
+            if txt:
+                law_name = txt
+
+    # LawTitle があればそれを使う
+    if law_title:
+        return law_title
+    # なければ LawName を返す
+    if law_name:
+        return law_name
+
     return None
+
 
 
 # ==================================
