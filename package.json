@@ -3,9 +3,12 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "build": "node scripts/build.js"
+        "build": "node scripts/build.js",
+        "build:ai": "node scripts/build_with_ai.js"
     },
     "dependencies": {
-        "csv-parse": "^5.5.6"
+        "csv-parse": "^5.5.6",
+        "@google/generative-ai": "^0.21.0",
+        "fast-xml-parser": "^4.5.0"
     }
 }

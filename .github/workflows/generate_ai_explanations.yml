@@ -1,0 +1,49 @@
+name: Generate AI Explanations
+
+on:
+  workflow_dispatch: {}
+  # fetch_laws.yml完了後に自動実行する場合は以下のコメントを解除
+  # workflow_run:
+  #   workflows: ["Fetch laws snapshot from e-Gov"]
+  #   types:
+  #     - completed
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # workflow_runでトリガーする場合、成功時のみ実行
+    # if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci || npm i
+
+      - name: Generate AI explanations
+        run: npm run build:ai
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Commit AI explanations to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist_with_ai
+          if git diff --cached --quiet; then
+            echo "No AI explanation changes to commit."
+          else
+            git commit -m "chore: generate AI explanations [skip ci]"
+            git push
+          fi
