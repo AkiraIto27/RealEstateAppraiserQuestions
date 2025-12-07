@@ -314,7 +314,7 @@ async function main() {
         schema_version: '1.1.0',
         content_version: contentVersion,
         generated_at: generatedAt,
-        ai_model: 'gemini-2.0-flash-exp',
+        ai_model: 'gemini-3-pro-preview',
         bundles
     };
     fs.writeFileSync(path.join(DIST_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
