@@ -34,7 +34,7 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
 
 // レート制限対策の設定
-const DELAY_BETWEEN_REQUESTS_MS = 1000; // 1秒間隔
+const DELAY_BETWEEN_REQUESTS_MS = 30000; // 30秒間隔
 const MAX_RETRIES = 3;
 
 /**
@@ -96,8 +96,8 @@ ${ragContext}
                 console.log(`[build_with_ai] Waiting ${waitTime}ms before retry...`);
                 await sleep(waitTime);
             } else {
-                console.error(`[build_with_ai] Failed to generate explanation for question ${question.id}`);
-                return `[解説生成エラー] ${error.message}`;
+                console.error(`[build_with_ai] STOPPING: Failed after ${MAX_RETRIES} retries for question ${question.id}. Exiting.`);
+                process.exit(1);
             }
         }
     }
