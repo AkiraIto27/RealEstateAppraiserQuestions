@@ -1,6 +1,8 @@
 name: Build, Commit dist, and Deploy Pages
 
 on:
+  schedule:
+    - cron: "0 0 1 8 *"  # 毎年8月1日 0:00 UTC
   push:
     branches: [ main ]
     paths-ignore:
