@@ -5,8 +5,12 @@
  * 年度ごとに1回のAPIリクエストで全問題の解説を一括生成する
  */
 
-// .envファイルから環境変数を読み込む
-import 'dotenv/config';
+// .envファイルから環境変数を読み込む（ローカル開発用）
+try {
+    await import('dotenv/config');
+} catch {
+    // dotenvがない場合は無視（GitHub Actionsでは環境変数が直接設定される）
+}
 
 import fs from 'node:fs';
 import path from 'node:path';
