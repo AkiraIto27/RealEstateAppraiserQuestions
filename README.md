@@ -1,124 +1,155 @@
-RealEstate Appraiser Questions / Past Questions Dataset
+# RealEstate Appraiser Questions / Past Questions Dataset
 
-不動産鑑定士（短答式）過去問を 年度CSV → JSONLバンドル → manifest.json に変換し、
-オフライン対応のモバイルアプリから取得しやすい形式で公開するためのリポジトリです。
+不動産鑑定士（短答式）過去問を **年度CSV → JSONLバンドル（gzip）→ manifest.json** に変換し、
+オフライン対応のモバイルアプリから取得しやすい形式で GitHub Pages で公開するためのリポジトリです。
 
-原本：/data/（年度×科目のCSV）
+さらに本リポジトリでは、e-Gov法令XML一括DLを元に作った **法令テキスト索引（laws_index）** を OpenAI Vector Store に同期し、
+**RAG（file_search）で根拠条文に基づくAI解説（explanation）を自動生成**して `dist/bundles/*.jsonl.gz` を更新できます。
 
-生成物：/dist/manifest.json と /dist/bundles/rYY.jsonl.gz（年度ごとのJSONL・gzip）
+---
 
-配信：GitHub Pages（自動デプロイ）
+## 目次
 
-5択固定（choice1〜choice5）。answerは1..5の数値
+- ディレクトリ構成
+- データ仕様
+  - CSVスキーマ
+  - dist(JSONL)スキーマ
+- ビルドと公開（基本）
+- 法令データの取り込み（e-Gov → XML → TXT索引）
+- Vector Store 同期（laws_index → OpenAI Vector Store）
+- AI解説生成（dist/bundles → explanation埋め）
+- GitHub Actions（自動化フロー）
+- トラブルシュート
+- ライセンス/出典について
 
-目次
+---
 
-ディレクトリ構成
+## ディレクトリ構成
 
-CSVスキーマ
-
-ビルドと公開
-
-差分更新の仕組み
-
-動作確認（curl）
-
-アプリ側の利用手順
-
-新年度データの追加手順
-
-開発メモ / トラブルシュート
-
-ライセンス/出典について
-
-ディレクトリ構成
-/
-├─ data/                     # 原本（CSV）
-│  ├─ r03_gyousei.csv
-│  ├─ r03_kanteihyoka.csv
-│  ├─ r04_gyousei.csv
-│  └─ r04_kanteihyoka.csv
-├─ dist/                     # 生成物（自動生成; コミット/Pages公開）
+```text
+RealEstateAppraiserQuestions/
+├─ data/                       # 原本（年度×科目のCSV）
+├─ dist/                       # 生成物（manifest.json と bundles/.jsonl.gz）
 │  ├─ manifest.json
 │  └─ bundles/
-│      ├─ r03.jsonl.gz
-│      └─ r04.jsonl.gz
+│     ├─ r03.jsonl.gz
+│     ├─ r04.jsonl.gz
+│     └─ ...
+├─ laws/
+│  └─ YYYY-MM-DD/              # e-Gov由来の法令XMLスナップショット（取得日ごと）
+├─ laws_index/
+│  └─ YYYY-MM-DD/              # laws_xml_to_txt により生成されるTXT索引（RAG入力用）
 ├─ scripts/
-│  └─ build.js               # CSV→JSONL & manifest 生成スクリプト
-├─ .github/workflows/
-│  └─ build.yml              # GitHub Actions（ビルド/コミット/Pages公開）
-├─ package.json
-└─ README.md
+│  ├─ build.js                 # CSV → dist生成
+│  ├─ fetch_laws_from_bulk.py  # e-Gov一括DLから laws/YYYY-MM-DD/ へ展開（想定）
+│  ├─ laws_xml_to_txt.mjs      # laws/YYYY-MM-DD/.xml → laws_index/YYYY-MM-DD/*.txt
+│  ├─ openai_sync_vector_store.mjs # laws_index を OpenAI Vector Store に同期
+│  └─ generate_explanations.mjs    # dist/bundles の explanation をRAGで生成して上書き
+├─ .openai/                    # OpenAI同期状態（自動生成・コミット推奨）
+│  ├─ vector_store_id.txt
+│  └─ vector_store_sync_state.json
+└─ .github/workflows/
+   ├─ build.yml                # build/commit/pages +（任意）AI解説生成
+   └─ fetch_laws.yml           # e-Gov法令の取得＆索引生成（＋任意でVS同期）
+```
 
-CSVスキーマ
+> **重要**
+> GitHub Actions は毎回クリーン環境で動くため、`.openai/vector_store_id.txt` をリポジトリに残さないと
+> 次回以降に Vector Store を“作り直し”になり得ます。`.openai/` はコミット推奨です。
+
+---
+
+## データ仕様
+
+### CSVスキーマ
 
 ヘッダ（固定・21列）
 
+```csv
 id,year,era,era_year,exam,subject,topic,question_no,statement,
 choice1,choice2,choice3,choice4,choice5,answer,
 explanation,law_citations,difficulty,tags,source_page,updated_at
+```
 
+- 5択固定（choice1〜choice5）
+- answer は 1..5 の数値
+- law_citations は `;` 区切り（例：`土地基本法:第X条; 都計法:第Y条`）
+- tags はカンマ区切り（例：`頻出,改正2025`）
+- 文章にカンマ/改行があるセルは引用符で囲む（Excel/スプレッドシートでOK）
 
-例：r05_gyousei.csv, r05_kanteihyoka.csv
+---
 
-5択固定。answer は 1..5 の数値
+### dist(JSONL) スキーマ（1行=1問）
 
-law_citations は ; 区切り（例：土地基本法:X条; 都計法:Y条）
+`dist/bundles/rYY.jsonl.gz` は **JSONL（1行1JSON）を gzip 圧縮**したものです。
 
-tags はカンマ区切り（例：頻出,改正2025）
+例：
 
-文章にカンマ/改行があるセルは引用符で囲む（Excel/スプレッドシートでOK）
+```json
+{
+  "id":"r05-001",
+  "year":2023,
+  "era":"令和",
+  "era_year":5,
+  "exam":"不動産鑑定士 短答",
+  "subject":"不動産に関する行政法規",
+  "topic":"土地基本法",
+  "question_no":1,
+  "statement":"…",
+  "choices":[
+    {"key":1,"text":"…"},
+    {"key":2,"text":"…"},
+    {"key":3,"text":"…"},
+    {"key":4,"text":"…"},
+    {"key":5,"text":"…"}
+  ],
+  "answer":2,
+  "explanation":"（AI解説または空）",
+  "law_citations":[
+    "土地基本法 第○条",
+    "（必要なら項・号まで）"
+  ],
+  "difficulty":2,
+  "tags":["頻出"],
+  "source":{"paper":"令和5年 行政法規","page":3},
+  "updated_at":"2025-11-08T00:00:00Z"
+}
+```
 
-ビルドと公開
-ローカル
+## ビルドと公開（基本）
+
+### ローカル
+
+```bash
 npm i
 npm run build
 # dist/manifest.json と dist/bundles/*.jsonl.gz が生成されます
+```
 
-GitHub Actions（自動）
+### GitHub Actions（基本）
 
-data/ を更新して main にpush → Actionsが走り、以下を実施
+data/ を更新して main に push → Actions が走り、以下を実施：
 
-scripts/build.js で dist/ を生成
+1. `scripts/build.js` で `dist/` を生成
+2. `dist/` を同じブランチにコミット（履歴に残す）
+3. `dist/` を GitHub Pages にデプロイ
 
-dist/ を 同じブランチにコミット（履歴に残す）
+必要権限（workflow側）：
 
-dist/ を Pagesにデプロイ
+```yaml
+permissions: { contents: write, pages: write, id-token: write }
+```
 
-必要権限：permissions: { contents: write, pages: write, id-token: write }
-リポジトリ設定 → Actions → General → Workflow permissions を Read and write に
+リポジトリ設定 → Actions → General → Workflow permissions を Read and write に。
 
-差分更新の仕組み
+### 差分更新の仕組み
 
-manifest.json には各年度バンドルの sha256 / etag / updated_at を格納
+`manifest.json` には各年度バンドルの sha256 / etag / updated_at を格納します。
+クライアントは起動時に manifest.json を取得し、差分がある年度だけ `rYY.jsonl.gz` を再DLできます。
 
-クライアントは起動時に manifest.json を取得し、年度ごとの差分だけ rYY.jsonl.gz を再DL
+### 動作確認（curl）
 
-完全オフライン運用：一度取得した束はローカルDBに取り込み
-
-manifest.json（例・抜粋）
-
-{
-  "schema_version": "1.1.0",
-  "content_version": "2025.11.0",
-  "generated_at": "2025-11-08T00:00:00Z",
-  "bundles": [
-    {
-      "id": "r05",
-      "title": "令和5年 全40問",
-      "year": 2023,
-      "items": 40,
-      "url": "/bundles/r05.jsonl.gz",
-      "size": 129112,
-      "sha256": "a8b1...ff",
-      "etag": "W/\"r05@2025.11.0\"",
-      "updated_at": "2025-11-08T00:00:00Z"
-    }
-  ]
-}
-
-動作確認（curl）
-
+```bash
 # manifest 取得
 curl -sS --compressed https://<USER>.github.io/<REPO>/manifest.json | jq .
 
@@ -129,51 +160,153 @@ curl -i -H "If-None-Match: $ETAG" https://<USER>.github.io/<REPO>/manifest.json
 # バンドル取得 & 先頭レコード表示
 curl -sS -o r05.jsonl.gz https://<USER>.github.io/<REPO>/bundles/r05.jsonl.gz
 gunzip -c r05.jsonl.gz | head -n 1 | jq .
+```
 
-# SHA-256 整合性
-MAN_SHA=$(curl -sS https://<USER>.github.io/<REPO>/manifest.json | jq -r '.bundles[] | select(.id=="r05") | .sha256')
-LOCAL_SHA=$(sha256sum r05.jsonl.gz | awk '{print $1}')
-echo "manifest:$MAN_SHA local:$LOCAL_SHA"
+## 法令データの取り込み（e-Gov → XML → TXT索引）
 
-アプリ側の利用手順
+### 目的
 
-GET /manifest.json を取得（If-None-Match を送ると帯域節約）
+法令XML（e-Gov一括DL）をそのままLLMに投入するのではなく、**TXT化した索引（laws_index）** を作り、
+Vector Store に登録して `file_search` で参照します（巨大トークン投入を避ける）。
 
-年度ごとに sha256/etag を比較し、変わっていれば GET /bundles/rYY.jsonl.gz
+### 手順（ローカル実行例）
 
-解凍 → 1行=1レコードの JSON をローカルDBへ UPSERT
+```bash
+# 1) laws/YYYY-MM-DD/ に XML を取得（fetch_laws_from_bulk.py 等で）
+python scripts/fetch_laws_from_bulk.py
 
-判定はクライアント側で：selected === answer（answer は 1..5）
+# 2) XML -> TXT索引
+node scripts/laws_xml_to_txt.mjs
+# => laws_index/YYYY-MM-DD/**/*.txt が生成される
+```
 
-JSONL 1行（例）：
+## Vector Store 同期（laws_index → OpenAI Vector Store）
 
-{"id":"r05-001","year":2023,"era":"令和","era_year":5,"exam":"不動産鑑定士 短答","subject":"行政法規","topic":"土地基本法","question_no":1,"statement":"…","choices":[{"key":1,"text":"(1)…"},{"key":2,"text":"(2)…"},{"key":3,"text":"(3)…"},{"key":4,"text":"(4)…"},{"key":5,"text":"(5)…"}],"answer":2,"explanation":"","law_citations":[{"law":"土地基本法","article":"X条"}],"difficulty":2,"tags":["頻出"],"source":{"paper":"令和5年 行政法規","page":3},"updated_at":"2025-11-08T00:00:00Z"}
+### 必要なもの
 
-新年度データの追加手順
+OpenAI API Key（後述の GitHub Secrets でも可）
 
-/data/ に rYY_gyousei.csv と rYY_kanteihyoka.csv を追加
+### 初回同期（Vector Store が無ければ自動作成）
 
-answer は 1..5 の数値、choice1..5 は必ず5列
+```bash
+export OPENAI_API_KEY="..."
+node scripts/openai_sync_vector_store.mjs
+```
 
-PRを作成 → レビュー → main へマージ
+- `laws_index/` 配下の **最新日付フォルダ（YYYY-MM-DD）** を自動選択して同期します
+- 初回は Vector Store を作成し、`.openai/vector_store_id.txt` に `vs_...` を保存します
+- 差分同期用に `.openai/vector_store_sync_state.json` も更新します
 
-Actions が自動で dist/ を更新 & コミット & Pages公開
+### 特定日付を同期したい
 
-開発メモ / トラブルシュート
+```bash
+node scripts/openai_sync_vector_store.mjs --date 2024-09-01
+```
 
-ファイル名が拾われない
-scripts/build.js は rYY_gyousei.csv / rYY_kanteihyoka.csv を対象にしています。表記ゆれがあると無視されます（ログに UNMATCHED と出力）。
+### オプション
 
-CSV列ズレ
-21列固定。末尾カンマ/空列で22列になると Invalid Record Length。
-→ エディタで空列削除 / ヘッダを固定 / 引用符を適切に。
+- `--dry-run`：変更検出のみでアップロードしない
+- `--prune`：ローカルに無いTXTを Vector Store から外し、Filesも削除（運用注意）
 
-answerにテキストが入る
-answer は 必ず数値（1..5）。誤って「ニとホ」等の本文が入るとバリデーションで落ちます。
+### 運用のコツ
 
-Pagesに出るがリポジトリに無い
-Pagesアーティファクト公開だけだとリポジトリには残りません。
-本リポジトリは dist をコミットするワークフローを採用しています（permissions: contents: write 必須）。
+`.openai/` はコミットしておくと、Actions実行時にVS IDが引き継がれます。
 
-CORS
-GitHub Pages はGETに対して通常CORS許可（Access-Control-Allow-Origin: *）が返るため、モバイルアプリの fetch で取得可能です。
+## AI解説生成（dist/bundles → explanation埋め）
+
+### 何が更新される？
+
+`generate_explanations.mjs` は `dist/bundles/*.jsonl.gz` を読み取り、
+
+1. `explanation` が空のレコードだけ生成（埋まっているものは skip）
+2. 一時ファイル（.tmp）に書き出して最後に置換
+3. 生成結果として `explanation` と `law_citations` を更新
+
+という動きをします。
+つまり “5問生成するたびに dist/bundles/*.jsonl.gz が更新されていく” イメージです。
+
+### ローカル実行例
+
+```bash
+export OPENAI_API_KEY="..."
+# 先に openai_sync_vector_store.mjs を実行して .openai/vector_store_id.txt を作っておく
+node scripts/generate_explanations.mjs --model gpt-5-mini --limit 5
+```
+
+### 重要：RAGで根拠縛り
+
+このスクリプトは Responses API の `tools: file_search` を有効化し、vector_store_ids に作成済みのVSを指定して検索させます。
+プロンプトで次を強制します：
+
+- 検索で根拠が取れない内容は推測しない
+- 根拠条文を特定できない場合は、`law_citations=[]` にして `explanation` へ「保留」等を明記
+
+### 主なオプション
+
+- `--model`：使用モデル（例：gpt-5-mini, gpt-5.2, gpt-4o-mini など）
+- `--temperature`：モデルによっては非対応（例：一部のGPT-5系）。非対応モデルでは指定を外してください
+- `--max-results 8`：file_search の最大取得件数（小さくすると入力トークン節約）
+- `--limit 5`：最大処理件数（テスト/チェックポイント用）
+- `--dry-run`：生成はするがファイルを書き換えない
+
+## GitHub Actions（自動化フロー）
+
+### 1) Secrets
+
+GitHub Secrets に `OPENAI_API_KEY` を登録してください（ActionsからOpenAI APIを叩くため）。
+
+### 2) fetch_laws.yml（法令更新）
+
+想定フロー：
+
+1. e-Gov一括DL → `laws/YYYY-MM-DD/` に XML 保存
+2. `laws_xml_to_txt.mjs` で `laws_index/YYYY-MM-DD/` を生成
+3. （推奨）`openai_sync_vector_store.mjs` を実行してVS同期
+4. `laws/` `laws_index/` `.openai/` をコミット＆push
+
+`fetch_laws.yml` はスナップショット運用が基本です（改正対応等で再生成可能）。
+
+### 3) build.yml（CSV→dist生成 + Pages公開 + AI解説）
+
+推奨フロー：
+
+1. `npm run build` で dist 生成
+2. AI解説生成を 5問ずつ実行して、その都度 commit/push（チェックポイント）
+3. 解説入りの dist を Pages に deploy
+
+**チェックポイント方式（5問→push を繰り返す）**
+- 途中で失敗しても、直前までの push 分は GitHub に残る
+- 次回以降は explanation が埋まった分は skip され、続きから進められます
+
+**無限ループ回避**
+- `paths-ignore: dist/**`（dist更新pushで再トリガーしない）
+- `if: github.actor != 'github-actions[bot]'`（botのpush起点でjobを止める）
+- commit message に `[skip ci]` を入れる（補助）
+
+## トラブルシュート
+
+### Cannot find package 'openai'
+`npm i openai` して `package-lock.json` をコミットしてから Actions を回してください（`npm ci` で入るように）
+
+### .openai/vector_store_id.txt が無い
+先に `openai_sync_vector_store.mjs` を実行してVS IDを生成し、`.openai/` をコミットしておくのが最も安定です
+
+### 429 / insufficient_quota
+クレジット不足・プロジェクト上限・課金設定の可能性があります（Billing/Usage/Limits を確認）
+
+### 400 Unsupported parameter: 'temperature'
+モデルによって temperature 非対応の場合があります
+→ `--temperature` を外す、または対応モデルに切り替える
+
+### gzip/stream系エラー
+`.jsonl.gz` の入出力で pipe 方向が不正だと落ちます
+→ Readable -> Transform(gzip) -> Writable の順になっているか確認
+
+### 巨大ファイル運用（laws/laws_index）
+`laws/`（XML）や `laws_index/`（TXT）は大きくなります
+→ 運用ポリシー（コミット対象/保持期間/スナップショット数）を決めるのがおすすめです
+
+## ライセンス/出典について
+
+過去問・法令データの取り扱いは、利用規約・引用要件・配布可否に注意してください
+e-Gov法令XMLは公的ソースですが、アプリ配布形態や二次配布の扱いは運用方針に合わせて整理してください
