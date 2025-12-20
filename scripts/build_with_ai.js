@@ -39,11 +39,11 @@ if (!GEMINI_API_KEY) {
 }
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
 // レート制限対策の設定
 const DELAY_BETWEEN_REQUESTS_MS = 60000; // 1分間隔
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
 
 // バッチ分割設定（2日に分けて実行する場合）
 // 例: 1日目: BATCH_START=0 BATCH_END=3 (r03, r04, r05)
@@ -79,8 +79,8 @@ function loadAllLawsAsText(lawsDir) {
         try {
             const { lawName, articles } = parseLawXml(path.join(lawsDir, file));
             if (lawName && articles.length > 0) {
-                const articleTexts = articles.slice(0, 50).map(a =>
-                    `${a.title}${a.caption ? `（${a.caption}）` : ''}: ${a.content.substring(0, 500)}`
+                const articleTexts = articles.map(a =>
+                    `${a.title}${a.caption ? `（${a.caption}）` : ''}: ${a.content}`
                 ).join('\n');
                 lawTexts.push(`【${lawName}】\n${articleTexts}`);
             }
@@ -91,23 +91,25 @@ function loadAllLawsAsText(lawsDir) {
 
     // 最大文字数を制限（Geminiのコンテキスト制限対策）
     const combined = lawTexts.join('\n\n');
-    return combined.length > 100000 ? combined.substring(0, 100000) + '\n...(省略)' : combined;
+    // 最大文字数を制限（Gemini 1.5 Proのコンテキストは2Mトークン以上あるため、十分に大きく取る）
+    return combined.length > 3000000 ? combined.substring(0, 3000000) + '\n...(省略)' : combined;
 }
 
 /**
  * 年度の全問題に対してAI解説を一括生成する
  */
-async function generateExplanationsForYear(questions, lawsContext, yearId) {
-    // 問題リストを作成（簡潔に）
-    const questionsText = questions.map((q, i) => {
+async function generateExplanationsForChunk(questions, lawsContext, yearId, topicName) {
+    // console.log(`[build_with_ai] Generating for ${questions.length} questions (Topic: ${topicName})`);
+
+    const questionsText = questions.map((q) => {
         const choicesText = q.choices.map(c => `${c.key}: ${c.text.substring(0, 100)}`).join(' | ');
-        return `問${q.question_no}[${q.topic}]: ${q.statement.substring(0, 150)}... 選択肢: ${choicesText} 正解: ${q.answer}`;
+        return `問${q.question_no}: ${q.statement.substring(0, 150)}... 選択肢: ${choicesText} 正解: ${q.answer}`;
     }).join('\n\n');
 
-    const prompt = `あなたは不動産鑑定士試験の専門家です。以下の${questions.length}問の問題について、それぞれ解説を生成してください。
+    const prompt = `あなたは不動産鑑定士試験の専門家です。以下の${questions.length}問の問題（トピック: ${topicName}）について、それぞれ解説を生成してください。
 
 ## 関連法令（参考資料）
-${lawsContext.substring(0, 50000)}
+${lawsContext ? lawsContext.substring(0, 30000) : '(関連法令なし)'}
 
 ## 問題一覧
 ${questionsText}
@@ -118,8 +120,8 @@ ${questionsText}
 \`\`\`json
 [
   {
-    "question_no": 1,
-    "ai_explanation": "【正解】選択肢Xが正解です。\\n\\n【正解の理由】...\\n\\n【各選択肢の解説】\\n選択肢1: ...\\n選択肢2: ...\\n選択肢3: ...\\n選択肢4: ...\\n選択肢5: ..."
+    "question_no": ${questions[0].question_no},
+    "ai_explanation": "【正解】選択肢Xが正解です。\\n\\n【正解の理由】...\\n\\n【各選択肢の解説】\\n選択肢1: ...\\n選択肢2: ...\\n..."
   },
   ...
 ]
@@ -134,34 +136,27 @@ JSON配列のみを出力してください。`;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-            console.log(`[build_with_ai] Sending request for ${yearId} (attempt ${attempt}/${MAX_RETRIES})...`);
+            // console.log(`[build_with_ai] Sending request for topic ${topicName} (attempt ${attempt})`);
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
 
-            // JSONを抽出
             const jsonMatch = text.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
                 const explanations = JSON.parse(jsonMatch[0]);
-                console.log(`[build_with_ai] Received ${explanations.length} explanations for ${yearId}`);
+                console.log(`[build_with_ai] Received ${explanations.length} explanations for topic: ${topicName}`);
                 return explanations;
             } else {
-                throw new Error('JSON array not found in response');
+                throw new Error('JSON array not found');
             }
         } catch (error) {
-            console.error(`[build_with_ai] Error (attempt ${attempt}/${MAX_RETRIES}):`, error.message);
-
+            console.error(`[build_with_ai] Error topic ${topicName} (attempt ${attempt}):`, error.message);
             if (attempt < MAX_RETRIES) {
-                const waitTime = Math.pow(2, attempt) * 1000;
-                console.log(`[build_with_ai] Waiting ${waitTime}ms before retry...`);
-                await sleep(waitTime);
-            } else {
-                console.error(`[build_with_ai] STOPPING: Failed after ${MAX_RETRIES} retries for ${yearId}. Exiting.`);
-                process.exit(1);
+                await sleep(attempt * 10000);
             }
         }
     }
-
+    console.warn(`[build_with_ai] Failed to generate for topic: ${topicName}`);
     return [];
 }
 
@@ -221,14 +216,47 @@ async function main() {
         const questions = readJsonlGz(inputPath);
         console.log(`[build_with_ai] Loaded ${questions.length} questions`);
 
-        // AI解説を一括生成
-        const explanations = await generateExplanationsForYear(questions, lawsContext, yearId);
+        // トピックごとにグループ化
+        const questionsByTopic = {};
+        for (const q of questions) {
+            const topic = q.topic || 'その他';
+            if (!questionsByTopic[topic]) questionsByTopic[topic] = [];
+            questionsByTopic[topic].push(q);
+        }
+
+        const topics = Object.keys(questionsByTopic);
+        console.log(`[build_with_ai] Found ${topics.length} topics:`, topics);
+
+        // トピックごとに解説生成
+        let allExplanations = [];
+        for (let t = 0; t < topics.length; t++) {
+            const topic = topics[t];
+            const topicQuestions = questionsByTopic[topic];
+            console.log(`[build_with_ai] Processing topic: ${topic} (${topicQuestions.length} questions)`);
+
+            // そのトピックに関連する法律コンテキストのみ構築
+            const context = buildRagContext(topic, lawsDir);
+
+            // 解説生成
+            const explanations = await generateExplanationsForChunk(topicQuestions, context, yearId, topic);
+            allExplanations = allExplanations.concat(explanations);
+
+            // レート制限対策の待機
+            await sleep(5000);
+        }
 
         // 解説をマージ
+        let matchCount = 0;
         for (const question of questions) {
-            const exp = explanations.find(e => e.question_no === question.question_no);
-            question.ai_explanation = exp ? exp.ai_explanation : '';
+            const exp = allExplanations.find(e => e.question_no === question.question_no);
+            if (exp) {
+                question.ai_explanation = exp.ai_explanation;
+                matchCount++;
+            } else {
+                console.warn(`[build_with_ai] Warning: No explanation generated for Q${question.question_no}`);
+            }
         }
+        console.log(`[build_with_ai] Merged ${matchCount}/${questions.length} explanations`);
 
         // JSONL化して出力
         const jsonl = questions.map(o => JSON.stringify(o)).join('\n');
@@ -256,9 +284,9 @@ async function main() {
             has_ai_explanation: true
         });
 
-        // 次のリクエストまで待機（最後以外）
-        if (i < jsonlFiles.length - 1) {
-            console.log(`[build_with_ai] Waiting ${DELAY_BETWEEN_REQUESTS_MS / 1000}s before next request...`);
+        // 次のファイルまで待機
+        if (i < filesToProcess.length - 1) {
+            console.log(`[build_with_ai] Waiting ${DELAY_BETWEEN_REQUESTS_MS / 1000}s before next file...`);
             await sleep(DELAY_BETWEEN_REQUESTS_MS);
         }
     }

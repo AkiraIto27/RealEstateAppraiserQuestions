@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.1.0",
+  "content_version": "2025.12.09",
+  "generated_at": "2025-12-09T00:56:36.711Z",
+  "ai_model": "gemini-3-pro-preview",
+  "bundles": [
+    {
+      "id": "r03",
+      "title": "令和3年 全80問 (AI解説付き)",
+      "year": 2021,
+      "items": 80,
+      "url": "/bundles/r03.jsonl.gz",
+      "size": 31492,
+      "sha256": "ec77af3716266abba8ac53e160849c481032c8212d9fabde98bf7e0f4038140e",
+      "etag": "W/\"r03@2025.12.09-ai\"",
+      "updated_at": "2025-12-09T00:56:36.711Z",
+      "has_ai_explanation": true
+    },
+    {
+      "id": "r04",
+      "title": "令和4年 全80問 (AI解説付き)",
+      "year": 2022,
+      "items": 80,
+      "url": "/bundles/r04.jsonl.gz",
+      "size": 31023,
+      "sha256": "95dbd81ee3643a7bff1e5754f591fbfa953945e46171269b30d703e526d5a231",
+      "etag": "W/\"r04@2025.12.09-ai\"",
+      "updated_at": "2025-12-09T00:56:36.711Z",
+      "has_ai_explanation": true
+    },
+    {
+      "id": "r05",
+      "title": "令和5年 全80問 (AI解説付き)",
+      "year": 2023,
+      "items": 80,
+      "url": "/bundles/r05.jsonl.gz",
+      "size": 34336,
+      "sha256": "5fe0797c5006fe009897a760b9167d23323b83d8888b78ad76954c325b61309d",
+      "etag": "W/\"r05@2025.12.09-ai\"",
+      "updated_at": "2025-12-09T00:56:36.711Z",
+      "has_ai_explanation": true
+    },
+    {
+      "id": "r06",
+      "title": "令和6年 全80問 (AI解説付き)",
+      "year": 2024,
+      "items": 80,
+      "url": "/bundles/r06.jsonl.gz",
+      "size": 32107,
+      "sha256": "61ab0960a3b478d289c4177775b70f19101bd5f6f9fa4aed818f53c7679e7462",
+      "etag": "W/\"r06@2025.12.09-ai\"",
+      "updated_at": "2025-12-09T00:56:36.711Z",
+      "has_ai_explanation": true
+    },
+    {
+      "id": "r07",
+      "title": "令和7年 全80問 (AI解説付き)",
+      "year": 2025,
+      "items": 80,
+      "url": "/bundles/r07.jsonl.gz",
+      "size": 34844,
+      "sha256": "701491e790de05326eff9f23149cb2dcf25e17bb2afa1cf3614e313b5749e5e9",
+      "etag": "W/\"r07@2025.12.09-ai\"",
+      "updated_at": "2025-12-09T00:56:36.711Z",
+      "has_ai_explanation": true
+    }
+  ]
+}
