@@ -38,7 +38,7 @@ const DIST_DIR = getArg("--dist", "dist");
 const BUNDLES_DIR = getArg("--bundles", path.join(DIST_DIR, "bundles"));
 const MODEL = getArg("--model", "gpt-5-mini");
 const TEMPERATURE = Number(getArg("--temperature", "0.2"));
-const MAX_RESULTS = Number(getArg("--max-results", "8"));
+const MAX_RESULTS = Number(getArg("--max-results", "5"));
 const LIMIT = Number(getArg("--limit", "0")); // 0 = unlimited
 const DRY_RUN = hasFlag("--dry-run");
 const FORCE = hasFlag("--force");
