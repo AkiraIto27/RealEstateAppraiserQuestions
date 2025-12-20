@@ -1,8 +1,11 @@
 name: Build, Commit dist, and Deploy Pages
 
 on:
-  schedule:
-    - cron: "0 0 1 8 *"  # 毎年8月1日 0:00 UTC
+  # トリガー: 他のワークフローが完了した後に実行
+  workflow_run:
+    workflows: ["Fetch and Convert Exam Questions", "Fetch laws snapshot from e-Gov"]
+    types:
+      - completed
   push:
     branches: [ main ]
     paths-ignore:
@@ -11,7 +14,9 @@ on:
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]'
+    if: >
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write      # ← dist をコミットするために必要
@@ -35,11 +40,21 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # 【ロジック】
+          # 法令取得ワークフロー(Fetch laws...)からのトリガーであれば、
+          # 法令が更新されたとみなし、既存の解説も含めて強制的に再生成する(--force)
+          # それ以外(6月の問題取得や通常push)は、解説未生成の新規問題のみ生成する(デフォルト)
+          FORCE_FLAG=""
+          if [[ "${{ github.event.workflow_run.name }}" == "Fetch laws snapshot from e-Gov" ]]; then
+            FORCE_FLAG="--force"
+            echo "Triggered by Law update: Force explanation regeneration ON."
+          fi
 
           max_batches=200
           for i in $(seq 1 $max_batches); do
             echo "===== batch $i ====="
-            node scripts/generate_explanations.mjs --limit 5
+            node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
 
             if git diff --quiet; then
               echo "No changes detected. Done."

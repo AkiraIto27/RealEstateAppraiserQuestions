@@ -1,0 +1,67 @@
+name: Fetch and Convert Exam Questions
+
+on:
+  schedule:
+    # 毎年6月1日 0:00 UTC（公開後の安全なタイミング）
+    - cron: '0 0 1 6 *'
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Year to fetch (e.g. 2025)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch Questions PDF
+        env:
+          YEAR_INPUT: ${{ github.event.inputs.year }}
+        run: |
+          if [ -n "$YEAR_INPUT" ]; then
+            node scripts/fetch_questions.js --year $YEAR_INPUT
+          else
+            node scripts/fetch_questions.js
+          fi
+
+      - name: Convert PDF to CSV
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YEAR_INPUT: ${{ github.event.inputs.year }}
+        run: |
+          # .env is handled in workflow via secrets
+          if [ -n "$YEAR_INPUT" ]; then
+            node scripts/pdf_to_csv.mjs --year $YEAR_INPUT
+          else
+            node scripts/pdf_to_csv.mjs
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Add new CSVs in data/
+          git add data/*.csv
+          
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "feat: add new exam questions (auto-fetched) [skip ci]"
+            git push
+          fi

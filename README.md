@@ -251,37 +251,52 @@ node scripts/generate_explanations.mjs --model gpt-5-mini --limit 5
 
 ## GitHub Actions（自動化フロー）
 
+### 概要：年間スケジュール
+
+本リポジトリは、以下のスケジュールで完全自動運用されるように設計されています。
+
+| 時期 | トリガー | 処理概要 |
+| :--- | :--- | :--- |
+| **6月1日** | `Fetch Questions` (Schedule) | 最新年度の**試験問題PDF**を自動取得・CSV化してコミットします。 |
+| **6/1 (直後)** | `Build` (Workflow Run) | 問題追加を受け、**新規問題のみ**AI解説を生成して公開します。 |
+| **9月1日** | `Fetch Laws` (Schedule) | 最新の**法令XML**を自動取得・コミットして、Vector Storeを更新します。 |
+| **9/1 (直後)** | `Build` (Workflow Run) | 法令更新を受け、**全年度の解説を新法令に基づいて強制再生成**します。 |
+
+---
+
 ### 1) Secrets
 
 GitHub Secrets に `OPENAI_API_KEY` を登録してください（ActionsからOpenAI APIを叩くため）。
 
 ### 2) fetch_laws.yml（法令更新）
 
-想定フロー：
+**実行日**: 毎年9月1日
 
 1. e-Gov一括DL → `laws/YYYY-MM-DD/` に XML 保存
 2. `laws_xml_to_txt.mjs` で `laws_index/YYYY-MM-DD/` を生成
-3. （推奨）`openai_sync_vector_store.mjs` を実行してVS同期
-4. `laws/` `laws_index/` `.openai/` をコミット＆push
+3. `openai_sync_vector_store.mjs` を実行してVS同期
+4. 結果をコミット＆push → **完了後、自動的に `build.yml` が `--force` モードで起動**
 
-`fetch_laws.yml` はスナップショット運用が基本です（改正対応等で再生成可能）。
+### 3) fetch_questions.yml（問題取得）
 
-### 3) build.yml（CSV→dist生成 + Pages公開 + AI解説）
+**実行日**: 毎年6月1日（試験日・公開日に合わせて調整可）
 
-推奨フロー：
+1. PDF取得・CSV変換
+2. 結果をコミット＆push → **完了後、自動的に `build.yml` が起動**
 
-1. `npm run build` で dist 生成
-2. AI解説生成を 5問ずつ実行して、その都度 commit/push（チェックポイント）
-3. 解説入りの dist を Pages に deploy
+### 4) build.yml（CSV→dist生成 + Pages公開 + AI解説）
 
-**チェックポイント方式（5問→push を繰り返す）**
-- 途中で失敗しても、直前までの push 分は GitHub に残る
-- 次回以降は explanation が埋まった分は skip され、続きから進められます
+**実行タイミング**:
+* `main` への push
+* 上記2つのFetchワークフロー完了時 (`workflow_run`)
 
-**無限ループ回避**
-- `paths-ignore: dist/**`（dist更新pushで再トリガーしない）
-- `if: github.actor != 'github-actions[bot]'`（botのpush起点でjobを止める）
-- commit message に `[skip ci]` を入れる（補助）
+**解説生成ロジック**:
+* 通常（6月の問題追加や手動push）: **解説が空の場合のみ**生成（スキップ機能）
+* 法令更新後（9月のFetch Laws完了後）: **`--force` オプション** が付与され、全過去問の解説を最新法令で上書き再生成
+
+**チェックポイント方式:**
+5問生成するごとに自動コミットするため、途中で止まっても次回は続きから再開できます。
+無限ループ防止のため、botによるコミットやdist/の変更はトリガーしません。
 
 ## トラブルシュート
 

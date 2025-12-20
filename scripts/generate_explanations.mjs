@@ -14,6 +14,7 @@
  *   --max-results 8
  *   --limit 50          # 最大処理件数（テスト用）
  *   --dry-run           # 生成はするがファイルを書き換えない
+ *   --force             # 既存の解説があっても強制的にスキップせず再生成する
  */
 
 import fs from "node:fs";
@@ -40,6 +41,7 @@ const TEMPERATURE = Number(getArg("--temperature", "0.2"));
 const MAX_RESULTS = Number(getArg("--max-results", "8"));
 const LIMIT = Number(getArg("--limit", "0")); // 0 = unlimited
 const DRY_RUN = hasFlag("--dry-run");
+const FORCE = hasFlag("--force");
 
 const VS_ID_FILE = path.join(".openai", "vector_store_id.txt");
 
@@ -269,7 +271,7 @@ async function processOneBundle(vsId, bundlePath) {
 
         processed++;
 
-        if (!isExplanationEmpty(obj)) {
+        if (!FORCE && !isExplanationEmpty(obj)) {
             skipped++;
             outStream.write(JSON.stringify(obj) + "\n");
             continue;
