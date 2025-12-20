@@ -9,7 +9,7 @@
  * Options:
  *   --dist dist
  *   --bundles dist/bundles
- *   --model gpt-4o-mini
+ *   --model gpt-5-mini
  *   --temperature 0.2
  *   --max-results 8
  *   --limit 50          # 最大処理件数（テスト用）
@@ -35,7 +35,7 @@ const hasFlag = (name) => args.includes(name);
 
 const DIST_DIR = getArg("--dist", "dist");
 const BUNDLES_DIR = getArg("--bundles", path.join(DIST_DIR, "bundles"));
-const MODEL = getArg("--model", "gpt-5.2");
+const MODEL = getArg("--model", "gpt-5-mini");
 const TEMPERATURE = Number(getArg("--temperature", "0.2"));
 const MAX_RESULTS = Number(getArg("--max-results", "8"));
 const LIMIT = Number(getArg("--limit", "0")); // 0 = unlimited

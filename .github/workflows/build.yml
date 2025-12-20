@@ -11,6 +11,7 @@ on:
 
 jobs:
   build:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write      # ← dist をコミットするために必要
@@ -48,6 +49,42 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node scripts/generate_explanations.mjs
+
+      - name: Generate explanations in batches and push (5 at a time)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 念のため main を最新化（他のpushが入った時の保険）
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+
+          max_batches=200  # 安全装置（5問×200=1000問）
+          for i in $(seq 1 $max_batches); do
+            echo "===== batch $i ====="
+
+            # 5問だけ生成
+            node scripts/generate_explanations.mjs --limit 5
+
+            # 差分が無ければ終了（＝もう埋めるものが無い）
+            if git diff --quiet; then
+              echo "No changes detected. Done."
+              break
+            fi
+
+            # 変更をコミットしてpush
+            git add dist || true
+            git commit -m "Auto-generate explanations (batch $i)" || true
+
+            # push前にリモート取り込み（競合保険）
+            git pull --rebase origin main || true
+            git push origin main
+          done
 
 
   deploy:
