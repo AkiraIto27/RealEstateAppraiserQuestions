@@ -43,6 +43,13 @@ jobs:
         with:
           path: ./dist
 
+      - name: Generate explanations (RAG)
+        if: github.ref == 'refs/heads/main'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/generate_explanations.mjs
+
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
