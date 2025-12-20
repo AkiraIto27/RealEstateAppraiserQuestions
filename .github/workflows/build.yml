@@ -11,6 +11,12 @@ on:
     paths-ignore:
       - 'dist/**'          # 無限ループ回避（dist更新で再トリガーしない）
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'すべての解説を強制的に再生成する（既存の解説を上書き）'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   build:
@@ -42,13 +48,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           # 【ロジック】
-          # 法令取得ワークフロー(Fetch laws...)からのトリガーであれば、
-          # 法令が更新されたとみなし、既存の解説も含めて強制的に再生成する(--force)
-          # それ以外(6月の問題取得や通常push)は、解説未生成の新規問題のみ生成する(デフォルト)
+          # 1. 法令取得ワークフロー(Fetch laws...)からの自動トリガー
+          # 2. 手動実行(workflow_dispatch)で force=true が指定された場合
+          # 上記いずれかで --force フラグを有効化する
           FORCE_FLAG=""
-          if [[ "${{ github.event.workflow_run.name }}" == "Fetch laws snapshot from e-Gov" ]]; then
+          if [[ "${{ github.event.workflow_run.name }}" == "Fetch laws snapshot from e-Gov" ]] || [[ "${{ inputs.force }}" == "true" ]]; then
             FORCE_FLAG="--force"
-            echo "Triggered by Law update: Force explanation regeneration ON."
+            echo "Force explanation regeneration ON (Reason: Law Update or Manual Input)."
           fi
 
           max_batches=200

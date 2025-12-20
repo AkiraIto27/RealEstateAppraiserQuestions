@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       year:
-        description: 'Year to fetch (e.g. 2025)'
+        description: '取得する年度（西暦。例: 2025、空欄なら最新）'
         required: false
 
 permissions:
