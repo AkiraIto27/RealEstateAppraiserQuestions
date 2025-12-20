@@ -157,9 +157,8 @@ function instructionsJa() {
 
 async function callOpenAI(vsId, qObj) {
     // ここで “問題1問ぶんだけ” を投げる。巨大JSONをまとめて投げない。
-    const resp = await client.responses.create({
+    const req = {
         model: MODEL,
-        temperature: TEMPERATURE,
         store: false, // ログ保存不要なら false（任意）
         instructions: instructionsJa(),
         tools: [
@@ -183,7 +182,16 @@ async function callOpenAI(vsId, qObj) {
                 strict: true,
             },
         },
-    });
+    };
+
+    // GPT-5-mini / gpt-5 / gpt-5-nano は temperature 非対応なので送らない
+    // gpt-5.2 / gpt-5.1 は reasoning.effort="none" のとき temperature 対応（デフォルト none）
+    const isLegacyGpt5 = MODEL.startsWith("gpt-5") && !MODEL.startsWith("gpt-5.1") && !MODEL.startsWith("gpt-5.2");
+    if (!isLegacyGpt5) {
+        req.temperature = TEMPERATURE;
+    }
+
+    const resp = await client.responses.create(req);
 
     const txt = getOutputText(resp);
     if (!txt) throw new Error("Empty model output");
