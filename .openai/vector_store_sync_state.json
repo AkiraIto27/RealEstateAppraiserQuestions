@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "root": "laws_index/2024-09-01",
+  "files": {
+    "210AC0000000057.txt": {
+      "sha256": "fecfd0ac23e2a7f730468255adc3b119c22446529857bb6e136faf34db7145b9",
+      "openai_file_id": "file-SU5FAdJR3vPaRg9ZramgZ6",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "323AC0000000025.txt": {
+      "sha256": "c57d9792a6e543d7b980bf02aa87e2f5113ad21b9c6d310a3c815445659d3974",
+      "openai_file_id": "file-K1CRGxDJLUPfuu8Zhu4S51",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "323AC0000000073.txt": {
+      "sha256": "05d9f0f7237002145069998540be929dca55750e1ec3438771d955d5a612bc1b",
+      "openai_file_id": "file-5k6gwrbiiQeF3xHVdSoNd2",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "325AC0000000201.txt": {
+      "sha256": "d4949f9f587827b702b4ed41f65b154a71ed14b9048b9dd9c31e726079be1ec3",
+      "openai_file_id": "file-6iG6yioePEVjWibPRV5d7R",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "325AC0100000214.txt": {
+      "sha256": "eae04cdcfe88bebc0353ef7cd7fb80efec3e3ddf69cdee3d2b0ea25f981bc46b",
+      "openai_file_id": "file-Kw1NF3R5CEpEuyfhDQYwWj",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "326AC0100000198.txt": {
+      "sha256": "2e7eff6b8bfea62f1f45cb286929924eb57b90742b8833ce2d0b84339802f6e9",
+      "openai_file_id": "file-DMUjZoD8vC1F22njhcDtit",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "326AC0100000219.txt": {
+      "sha256": "0d0111409ad787e4c8c5d07173778bb5f93725499a2db2bf6381738e0849d3cc",
+      "openai_file_id": "file-Gf6j2REeAbLNBHAZCWRwxq",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "327AC0000000229.txt": {
+      "sha256": "ac675a9c6491ccdd66f8c17db097a0069d8efcb34faaff62539a876d6198ec84",
+      "openai_file_id": "file-Mv5QjjinLCe2jc8PZEm6p6",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "327AC1000000176.txt": {
+      "sha256": "6e8cde1e6cf912b06a5200cdc21859dbbe2a86cb97f6a373bcf3cf149b9623e9",
+      "openai_file_id": "file-LZFEQwv3zLjo8Jd5dPRvY7",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "329AC0000000119.txt": {
+      "sha256": "117e018fa868ba624d54936d5ae3321d92a0a9445ffa7f46076883905624d6e9",
+      "openai_file_id": "file-XvsRqTT7WYeVC3kSLL5s9K",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "331AC0000000101.txt": {
+      "sha256": "b9bad55f03656b086bc0a0bd9e6af70e4e3f323722e971a69c508060b00a2d9a",
+      "openai_file_id": "file-Un9ioixdtaJLP2uhXNdVe8",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "332AC0000000026.txt": {
+      "sha256": "189666e28b71851e5364da14bfee6fe0959fb7ad7e9de915c1e3a158fc317c77",
+      "openai_file_id": "file-G7vwzSW75TULPt8mSaePZR",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "336AC0000000191.txt": {
+      "sha256": "b34a75fdd7a483207c1e743d38ee1df68eb1c92f49ac1dc8ea83fa0359ab2a00",
+      "openai_file_id": "file-C71Sc5JKwDhKu5LJG9BkD2",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "338AC0000000152.txt": {
+      "sha256": "bbe56539595dc41f99da389c9af9fb335c5f2c2e54a0e545dcd0349e263ad7cd",
+      "openai_file_id": "file-MDAft7MiUNvDRayHWySTjv",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "339AC0000000167.txt": {
+      "sha256": "5c7676c549fddc2addd37cba531f583ff3159c0331627dc4adff3855262b48ee",
+      "openai_file_id": "file-8zZpDanr3yiVXsHegHE8fC",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "340AC0000000033.txt": {
+      "sha256": "39547de1d32dfa72749003f9f71bdf36f81f38c68605423705be90906aa123ec",
+      "openai_file_id": "file-HF3NXoE1uiBDvRz8shGD3x",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "340AC0000000034.txt": {
+      "sha256": "42ca4634e5170131e17a8c1a8a22d2205b377826593e5ab13219c5d244eb2ac5",
+      "openai_file_id": "file-Vu9pxLACwjGs1pc4TCRLkd",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "343AC0000000100.txt": {
+      "sha256": "f611ec2d33cf9824605d42e56de1b2c085be2556d1be11b61dce38c5060a8f6d",
+      "openai_file_id": "file-AKM3bD3hAoAQnoGZ3EFSiR",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "344AC0000000038.txt": {
+      "sha256": "0e4833fd7e1b8d276ede225f260c89927c9a91cc9e56736666b5d4b54fca1399",
+      "openai_file_id": "file-1PXpAwiXM1ozPHfE2EyEFS",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "344AC0000000049.txt": {
+      "sha256": "28e8650e18332112e718928d9a4543f7f3a0fb909f096ea15c03d3dbde311310",
+      "openai_file_id": "file-WWGun9ie8WdGEJ7PwN3aR6",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "347AC0000000085.txt": {
+      "sha256": "27d40073a9961f28270c1353001f96eb04bb311a22c4df505034ab65b745edc9",
+      "openai_file_id": "file-PJs4EEKQKUKZ6rj7jvS76u",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "349AC1000000092.txt": {
+      "sha256": "c4b53578657d7e0385a487a107fcfc8093864107184d45505fe810eaa2813785",
+      "openai_file_id": "file-4HXYeHrdrTXn4efuWX2H79",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "401AC0000000084.txt": {
+      "sha256": "67026c3d2f794cd90e91d949a4a7b60fe9c89046e8d0d5fbeb51ac671538e608",
+      "openai_file_id": "file-7RR5zyhijvcx2BcWQSbJVA",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "406AC0000000077.txt": {
+      "sha256": "af0a837fc2661d8707c7a012d6528b6210154405e2c3136378ab3469357c5235",
+      "openai_file_id": "file-DRETRTzGxd8A4pZVZk7r1y",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "410AC0000000105.txt": {
+      "sha256": "73ff16cc8b5c73e48dedd33d6f4fd95be228b9c856237f4648e677a41950bfe9",
+      "openai_file_id": "file-D4Uk41zT5P7VddgrCLv8t7",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "411AC0000000081.txt": {
+      "sha256": "c232e8d7ec8a788c104ee585c225072d7ef34a45d79f22ee2d249e0f354f6cf4",
+      "openai_file_id": "file-6CvtxMuR6EkPpYsLVW8c4w",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "414AC0000000053.txt": {
+      "sha256": "79c2fa995b9f930357a5b68b8544cd9d223c29e1a7992e6e85c9c9bbf46cbae5",
+      "openai_file_id": "file-HhcTtBrauLjTD2JLqKGRD2",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "414AC0000000078.txt": {
+      "sha256": "13899af0f1917a652e574eafc67b1c3fd83c055683190c7350b5f2b27b3337e6",
+      "openai_file_id": "file-8WwRiSQgLmP8nyAQeWndfU",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "416AC0000000110.txt": {
+      "sha256": "bfe9aac2322a3d0d2dd002c459e639c909bca35c17715a1cf6f2047edd885cb7",
+      "openai_file_id": "file-MYPUPEQtMjFJ4os38gEcHJ",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    },
+    "418AC0000000091.txt": {
+      "sha256": "c11478b7e5d71052c9948e4c9c6f1fe335ad592dba30a62b08383618d70ed2c3",
+      "openai_file_id": "file-QWPNcNEk8wsEpq4CDvfqzD",
+      "uploaded_at": "2025-12-20T07:46:26.024Z"
+    }
+  }
+}
