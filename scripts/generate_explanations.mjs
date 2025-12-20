@@ -21,6 +21,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import zlib from "node:zlib";
 import readline from "node:readline";
+import { once } from "node:events";
 import OpenAI from "openai";
 
 const args = process.argv.slice(2);
@@ -230,7 +231,15 @@ async function processOneBundle(vsId, bundlePath) {
     const inStream = fs.createReadStream(bundlePath).pipe(zlib.createGunzip());
     const rl = readline.createInterface({ input: inStream, crlfDelay: Infinity });
 
-    const outStream = fs.createWriteStream(tmpOut).pipe(zlib.createGzip({ level: 9 }));
+    const gzip = zlib.createGzip({ level: 9 });
+    const fileOut = fs.createWriteStream(tmpOut);
+    gzip.pipe(fileOut);
+    const outStream = gzip;
+
+    // エラーを握りつぶさず落とす（Unhandled error event 防止）
+    inStream.on("error", (e) => gzip.destroy(e));
+    gzip.on("error", (e) => fileOut.destroy(e));
+    fileOut.on("error", (e) => gzip.destroy(e));
 
     let processed = 0;
     let generated = 0;
@@ -274,7 +283,8 @@ async function processOneBundle(vsId, bundlePath) {
         outStream.write(JSON.stringify(obj) + "\n");
     }
 
-    await new Promise((r) => outStream.end(r));
+    outStream.end();
+    await once(fileOut, "close");
 
     if (DRY_RUN) {
         await fsp.unlink(tmpOut);
