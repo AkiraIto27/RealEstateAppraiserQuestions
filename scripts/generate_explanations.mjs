@@ -192,6 +192,22 @@ async function callOpenAI(vsId, qObj) {
         model: MODEL,
         store: false, // ログ保存不要なら false（任意）
         instructions: instructionsJa(),
+        response_format: {
+            type: "json_schema",
+            json_schema: {
+                name: "explanation_output",
+                strict: true,
+                schema: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                        explanation: { type: "string" },
+                        law_citations: { type: "array", items: { type: "string" } },
+                    },
+                    required: ["explanation", "law_citations"],
+                },
+            },
+        },
         input: [
             {
                 role: "user",
