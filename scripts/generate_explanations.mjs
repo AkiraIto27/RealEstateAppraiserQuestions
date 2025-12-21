@@ -9,10 +9,12 @@
  * Options:
  *   --dist dist
  *   --bundles dist/bundles
+ *   --bundle r03.jsonl.gz # 特定の1ファイルだけ処理（任意）
  *   --model gpt-5-mini
  *   --temperature 0.2
  *   --max-results 8
- *   --limit 50          # 最大処理件数（テスト用）
+ *   --limit 50          # 最大生成件数（1ファイルあたり）
+ *   --log-per-question  # 1問ごとの時間・トークンを出す（調査用）
  *   --dry-run           # 生成はするがファイルを書き換えない
  *   --force             # 既存の解説があっても強制的にスキップせず再生成する
  */
@@ -42,10 +44,22 @@ const MAX_RESULTS = Number(getArg("--max-results", "5"));
 const LIMIT = Number(getArg("--limit", "0")); // 0 = unlimited
 const DRY_RUN = hasFlag("--dry-run");
 const FORCE = hasFlag("--force");
+const ONLY_BUNDLE = getArg("--bundle", "");
+const LOG_PER_QUESTION = hasFlag("--log-per-question");
 
 const VS_ID_FILE = path.join(".openai", "vector_store_id.txt");
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const OPENAI_STATS = {
+    attempts: 0, // responses.create を試した回数（リトライ込み）
+    success: 0, // responses.create が成功して返った回数
+    retries: 0, // リトライした回数
+    total_ms: 0,
+    input_tokens: 0,
+    output_tokens: 0,
+    total_tokens: 0,
+};
 
 function normalizeChoices(q) {
     // choices: [{key:1,text:"..."}] / ["..."] / {1:"...",2:"..."} 等を一応吸収
@@ -55,7 +69,7 @@ function normalizeChoices(q) {
     if (Array.isArray(c)) {
         return c.map((x, idx) => {
             if (typeof x === "string") return { key: idx + 1, text: x };
-            if (typeof x === "object" && x) return { key: x.key ?? (idx + 1), text: x.text ?? x.label ?? "" };
+            if (typeof x === "object" && x) return { key: x.key ?? idx + 1, text: x.text ?? x.label ?? "" };
             return { key: idx + 1, text: String(x) };
         });
     }
@@ -92,51 +106,17 @@ async function listBundleFiles(dir) {
 }
 
 async function readVectorStoreId() {
-    const id = (await fsp.readFile(VS_ID_FILE, "utf-8")).trim();
-    if (!id) throw new Error(`Empty vector_store_id in ${VS_ID_FILE}`);
-    return id;
-}
-
-// output_text が無い場合のフォールバック（SDKやモード差）
-function getOutputText(resp) {
-    if (typeof resp.output_text === "string" && resp.output_text.trim()) return resp.output_text;
-
-    // 念のため output をなめて output_text を集める
-    const out = [];
-    for (const item of resp.output ?? []) {
-        if (item?.type !== "message") continue;
-        for (const c of item.content ?? []) {
-            if (c?.type === "output_text" && typeof c.text === "string") out.push(c.text);
-        }
+    if (!fs.existsSync(VS_ID_FILE)) {
+        throw new Error(`Vector Store ID file not found: ${VS_ID_FILE}`);
     }
-    return out.join("\n").trim();
+    return (await fsp.readFile(VS_ID_FILE, "utf-8")).trim();
 }
-
-const SCHEMA = {
-    type: "object",
-    properties: {
-        explanation: { type: "string" },
-        law_citations: { type: "array", items: { type: "string" } },
-    },
-    required: ["explanation", "law_citations"],
-    additionalProperties: false,
-};
 
 function buildPrompt(q) {
+    // 入力 JSONL の形が多少違っても吸収する
+    const meta = q.meta ?? {};
     const choices = normalizeChoices(q);
-    const answer = q.answer ?? q.correct_answer ?? q.correct ?? null;
-
-    const meta = {
-        id: q.id,
-        year: q.year,
-        era: q.era,
-        era_year: q.era_year,
-        exam: q.exam,
-        subject: q.subject,
-        topic: q.topic,
-        question_no: q.question_no,
-        source: q.source,
-    };
+    const answer = q.answer ?? q.correct ?? q.correct_answer ?? q.correctChoice ?? q.correct_choice;
 
     return {
         meta,
@@ -157,12 +137,50 @@ function instructionsJa() {
     ].join("\n");
 }
 
+function getOutputText(resp) {
+    // responses API の output_text 簡易取得（SDK 互換のために保険）
+    if (typeof resp.output_text === "string") return resp.output_text;
+    // fallback: output[...].content[...].text などを辿る
+    try {
+        const parts = [];
+        for (const o of resp.output ?? []) {
+            for (const c of o.content ?? []) {
+                if (c.type === "output_text" && typeof c.text === "string") parts.push(c.text);
+                if (c.type === "text" && typeof c.text === "string") parts.push(c.text);
+            }
+        }
+        const s = parts.join("");
+        return s || null;
+    } catch {
+        return null;
+    }
+}
+
 async function callOpenAI(vsId, qObj) {
     // ここで “問題1問ぶんだけ” を投げる。巨大JSONをまとめて投げない。
     const req = {
         model: MODEL,
         store: false, // ログ保存不要なら false（任意）
         instructions: instructionsJa(),
+        input: [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "input_text",
+                        text: JSON.stringify({
+                            task: "explain_question",
+                            question: qObj,
+                            output_schema: {
+                                explanation: "string",
+                                law_citations: ["string"],
+                            },
+                        }),
+                    },
+                ],
+            },
+        ],
+        // Vector Store への file_search
         tools: [
             {
                 type: "file_search",
@@ -170,20 +188,6 @@ async function callOpenAI(vsId, qObj) {
                 max_num_results: MAX_RESULTS,
             },
         ],
-        input: [
-            {
-                role: "user",
-                content: JSON.stringify(qObj, null, 0),
-            },
-        ],
-        text: {
-            format: {
-                type: "json_schema",
-                name: "explanation_result",
-                schema: SCHEMA,
-                strict: true,
-            },
-        },
     };
 
     // GPT-5-mini / gpt-5 / gpt-5-nano は temperature 非対応なので送らない
@@ -209,15 +213,19 @@ async function callOpenAI(vsId, qObj) {
     if (typeof parsed.explanation !== "string") throw new Error("Invalid: explanation");
     if (!Array.isArray(parsed.law_citations)) throw new Error("Invalid: law_citations");
 
-    return parsed;
+    return { parsed, usage: resp.usage ?? null };
 }
 
 // 簡単なリトライ（429/5xx）
-async function withRetry(fn, { tries = 4 } = {}) {
+// ※この backoff は消さない。レート制限や一時障害で落ちるのを防ぐ。
+async function withRetry(fn, { tries = 4, label = "" } = {}) {
     let lastErr;
     for (let i = 0; i < tries; i++) {
         try {
-            return await fn();
+            OPENAI_STATS.attempts++;
+            const ret = await fn();
+            OPENAI_STATS.success++;
+            return ret;
         } catch (e) {
             lastErr = e;
             const msg = String(e?.message ?? e);
@@ -228,8 +236,12 @@ async function withRetry(fn, { tries = 4 } = {}) {
                 msg.includes("502") ||
                 msg.includes("timeout") ||
                 msg.includes("ETIMEDOUT");
+
             if (!isRetryable || i === tries - 1) throw e;
+
+            OPENAI_STATS.retries++;
             const wait = 1500 * Math.pow(2, i);
+            console.warn(`[retry] ${label} attempt=${i + 1}/${tries} wait_ms=${wait} msg=${msg}`);
             await new Promise((r) => setTimeout(r, wait));
         }
     }
@@ -279,9 +291,37 @@ async function processOneBundle(vsId, bundlePath) {
 
         const promptObj = buildPrompt(obj);
 
-        const result = await withRetry(() => callOpenAI(vsId, promptObj));
+        const qid = obj.id ?? obj.qid ?? obj.question_id ?? obj.meta?.id ?? `line${processed}`;
+        const t0 = Date.now();
+        const { parsed: result, usage } = await withRetry(() => callOpenAI(vsId, promptObj), {
+            label: `${path.basename(bundlePath)}:${qid}`,
+        });
+        const ms = Date.now() - t0;
+
         obj.explanation = result.explanation;
         obj.law_citations = result.law_citations;
+
+        OPENAI_STATS.total_ms += ms;
+        if (usage) {
+            const inTok = usage.input_tokens ?? 0;
+            const outTok = usage.output_tokens ?? 0;
+            const totTok = usage.total_tokens ?? (inTok + outTok);
+            OPENAI_STATS.input_tokens += inTok;
+            OPENAI_STATS.output_tokens += outTok;
+            OPENAI_STATS.total_tokens += totTok;
+        }
+
+        if (LOG_PER_QUESTION) {
+            if (usage) {
+                console.log(
+                    `[q] bundle=${path.basename(bundlePath)} id=${qid} ms=${ms} ` +
+                    `tokens(in=${usage.input_tokens ?? "?"}, out=${usage.output_tokens ?? "?"}, total=${usage.total_tokens ?? "?"
+                    })`,
+                );
+            } else {
+                console.log(`[q] bundle=${path.basename(bundlePath)} id=${qid} ms=${ms} tokens(n/a)`);
+            }
+        }
 
         generated++;
 
@@ -335,15 +375,30 @@ async function main() {
     }
     const vsId = await readVectorStoreId();
 
-    const bundleFiles = await listBundleFiles(BUNDLES_DIR);
+    let bundleFiles = await listBundleFiles(BUNDLES_DIR);
+
+    // 1ファイルだけ処理したい場合（例: --bundle r03.jsonl.gz）
+    if (ONLY_BUNDLE) {
+        const byBase = path.basename(ONLY_BUNDLE);
+        const targetAbs = path.resolve(path.isAbsolute(ONLY_BUNDLE) ? ONLY_BUNDLE : path.join(BUNDLES_DIR, ONLY_BUNDLE));
+        bundleFiles = bundleFiles.filter((p) => path.resolve(p) === targetAbs || path.basename(p) === byBase);
+    }
+
     if (bundleFiles.length === 0) {
-        throw new Error(`No bundle files found: ${BUNDLES_DIR}/*.jsonl.gz`);
+        throw new Error(
+            ONLY_BUNDLE ? `No bundle matched: ${ONLY_BUNDLE} (dir=${BUNDLES_DIR})` : `No bundle files found: ${BUNDLES_DIR}/*.jsonl.gz`,
+        );
     }
 
     console.log(`Vector store: ${vsId}`);
     console.log(`Model       : ${MODEL}`);
     console.log(`Bundles     : ${bundleFiles.length}`);
     console.log(`Dry-run     : ${DRY_RUN}`);
+    console.log(`Force       : ${FORCE}`);
+    console.log(`Limit       : ${LIMIT}`);
+    console.log(`Max-results : ${MAX_RESULTS}`);
+    console.log(`Bundle      : ${ONLY_BUNDLE || "(all)"}`);
+    console.log(`Log-per-q   : ${LOG_PER_QUESTION}`);
 
     let totalGen = 0;
     for (const b of bundleFiles) {
@@ -356,6 +411,12 @@ async function main() {
     }
 
     console.log(`Done. total_generated=${totalGen}`);
+
+    const avgMs = OPENAI_STATS.success ? Math.round(OPENAI_STATS.total_ms / OPENAI_STATS.success) : 0;
+    console.log(
+        `[openai] attempts=${OPENAI_STATS.attempts} success=${OPENAI_STATS.success} retries=${OPENAI_STATS.retries} avg_ms=${avgMs} ` +
+        `tokens_total=${OPENAI_STATS.total_tokens} (in=${OPENAI_STATS.input_tokens}, out=${OPENAI_STATS.output_tokens})`,
+    );
 }
 
 main().catch((e) => {
