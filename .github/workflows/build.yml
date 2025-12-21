@@ -80,6 +80,19 @@ jobs:
             echo "=== git status BEFORE generate ==="
             git status --porcelain | head -n 80
 
+            echo "=== sanity check: first line explanation length (r03) ==="
+            node -e "
+            const fs=require('fs'), z=require('zlib'), rl=require('readline');
+            const s=fs.createReadStream('dist/bundles/r03.jsonl.gz').pipe(z.createGunzip());
+            const r=rl.createInterface({input:s});
+            r.on('line', (line)=>{ 
+              const o=JSON.parse(line); 
+              const e=o.explanation;
+              console.log({id:o.id, expl_type:(e===null?'null':typeof e), expl_len:(typeof e==='string'?e.trim().length:'n/a')});
+              r.close();
+            });
+            "
+
             node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
 
             if git diff --quiet; then
