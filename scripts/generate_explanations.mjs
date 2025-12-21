@@ -406,6 +406,7 @@ async function processOneBundle(vsId, bundlePath) {
         const promptObj = buildPrompt(obj);
 
         const t0 = Date.now();
+        console.log(`[gen-start] ${path.basename(bundlePath)}:${qid} (sending request...)`);
         const { parsed: result, usage } = await withRetry(() => callOpenAI(vsId, promptObj), {
             label: `${path.basename(bundlePath)}:${qid}`,
         });
