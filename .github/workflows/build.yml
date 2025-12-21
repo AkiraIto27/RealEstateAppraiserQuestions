@@ -61,7 +61,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+
           # 【ロジック】
           # 1. 法令取得ワークフロー(Fetch laws...)からの自動トリガー
           # 2. 手動実行(workflow_dispatch)で force=true が指定された場合
@@ -72,11 +72,14 @@ jobs:
             echo "Force explanation regeneration ON (Reason: Law Update or Manual Input)."
           fi
 
-          git pull --rebase origin main || true
-
           max_batches=200
           for i in $(seq 1 $max_batches); do
             echo "===== batch $i ====="
+
+            # 重要：pullしない（buildでdistが汚れるのでrebaseできない）
+            echo "=== git status BEFORE generate ==="
+            git status --porcelain | head -n 80
+
             node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
 
             if git diff --quiet; then
@@ -85,7 +88,7 @@ jobs:
             fi
 
             git add -A dist
-            git commit -m "chore: auto-generate explanations (batch $i) [skip ci]" || true
+            git commit -m "chore: auto-generate explanations (batch $i) [skip ci]"
             git push origin HEAD:main
           done
 
