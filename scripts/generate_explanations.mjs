@@ -494,7 +494,14 @@ async function main() {
     if (ONLY_BUNDLE) {
         const byBase = path.basename(ONLY_BUNDLE);
         const targetAbs = path.resolve(path.isAbsolute(ONLY_BUNDLE) ? ONLY_BUNDLE : path.join(BUNDLES_DIR, ONLY_BUNDLE));
-        bundleFiles = bundleFiles.filter((p) => path.resolve(p) === targetAbs || path.basename(p) === byBase);
+        bundleFiles = bundleFiles.filter((p) => {
+            const pBase = path.basename(p);
+            return (
+                path.resolve(p) === targetAbs ||
+                pBase === byBase ||
+                pBase === byBase + ".jsonl.gz"
+            );
+        });
     }
 
     if (bundleFiles.length === 0) {
