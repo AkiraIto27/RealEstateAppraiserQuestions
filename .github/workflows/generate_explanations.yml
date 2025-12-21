@@ -75,7 +75,8 @@ jobs:
             # ここで npm run build は絶対にしない
             # dist が既にある前提で explanation を埋めるだけ
 
-            node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
+            # node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
+            node scripts/generate_explanations.mjs --limit 5 --max-results 5 --bundle r03 $FORCE_FLAG
 
             if git diff --quiet -- dist; then
               echo "No changes detected. Done."
