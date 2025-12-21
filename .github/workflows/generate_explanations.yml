@@ -1,0 +1,78 @@
+name: Generate explanations (no build)
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force regenerate explanations even if explanation already exists"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate explanations (batched, no build)
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          FORCE_FLAG=""
+          if [ "${{ inputs.force }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+
+          echo "Force flag: ${FORCE_FLAG:-"(none)"}"
+
+          # 生成前の sanity（説明が空ならAIを呼ぶのが正しい）
+          echo "=== sanity check: r03 first line explanation length (before generate) ==="
+          node -e "
+          const fs=require('fs'), z=require('zlib'), rl=require('readline');
+          const s=fs.createReadStream('dist/bundles/r03.jsonl.gz').pipe(z.createGunzip());
+          const r=rl.createInterface({input:s});
+          r.on('line', (line)=>{ 
+            const o=JSON.parse(line); 
+            const e=o.explanation;
+            console.log({id:o.id, expl_type:(e===null?'null':typeof e), expl_len:(typeof e==='string'?e.trim().length:'n/a')});
+            r.close();
+          });
+          "
+
+          max_batches=200
+          for i in $(seq 1 "$max_batches"); do
+            echo "===== batch $i ====="
+
+            # ここで npm run build は絶対にしない
+            # dist が既にある前提で explanation を埋めるだけ
+
+            node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
+
+            if git diff --quiet -- dist; then
+              echo "No changes detected. Done."
+              break
+            fi
+
+            git add -A dist
+            git commit -m "chore: auto-generate explanations (batch $i) [skip ci]"
+            git push origin HEAD:main
+          done

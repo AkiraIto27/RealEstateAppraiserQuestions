@@ -1,120 +1,51 @@
-name: Build, Commit dist, and Deploy Pages
+name: Build dist bundles
 
 on:
-  # トリガー: 他のワークフローが完了した後に実行
-  workflow_run:
-    workflows: ["Fetch and Convert Exam Questions", "Fetch laws snapshot from e-Gov"]
-    types:
-      - completed
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths-ignore:
-      - 'dist/**'          # 無限ループ回避（dist更新で再トリガーしない）
-  workflow_dispatch:
-    inputs:
-      force:
-        description: 'すべての解説を強制的に再生成する（既存の解説を上書き）'
-        type: boolean
-        required: false
-        default: false
+      - "dist/**"   # dist をコミットしても build が無限ループしないように
 
 jobs:
   build:
-    if: >
-      github.actor != 'github-actions[bot]' &&
-      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write      # ← dist をコミットするために必要
-      pages: write
-      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          persist-credentials: true   # ← GITHUB_TOKEN で push するために必要
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+          fetch-depth: 0
 
-      - run: npm ci || npm i
-      - run: |
-          npm run build
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-          echo "=== git status after build ==="
-          git status --porcelain dist/bundles | head -n 50
+      - name: Install dependencies
+        run: npm ci
 
-          echo "=== sanity check: r03 first line explanation length ==="
-          node -e "
-          const fs=require('fs'), z=require('zlib'), rl=require('readline');
-          const s=fs.createReadStream('dist/bundles/r03.jsonl.gz').pipe(z.createGunzip());
-          const r=rl.createInterface({input:s});
-          r.on('line', (line)=>{ const o=JSON.parse(line); const e=o.explanation;
-            console.log({id:o.id, expl_type: (e===null?'null':typeof e), expl_len: (typeof e==='string'?e.trim().length:'n/a')});
-            r.close();
-          });
-          "
-      - name: Generate explanations in batches and push (5 at a time)
-        if: github.ref == 'refs/heads/main'
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      - name: Build dist
         run: |
           set -euo pipefail
+          npm run build
+
+          echo "=== dist changes (after build) ==="
+          git status --porcelain dist | head -n 200
+
+      - name: Commit and push dist if changed
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- dist; then
+            echo "No dist changes. Done."
+            exit 0
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 【ロジック】
-          # 1. 法令取得ワークフロー(Fetch laws...)からの自動トリガー
-          # 2. 手動実行(workflow_dispatch)で force=true が指定された場合
-          # 上記いずれかで --force フラグを有効化する
-          FORCE_FLAG=""
-          if [[ "${{ github.event.workflow_run.name }}" == "Fetch laws snapshot from e-Gov" ]] || [[ "${{ inputs.force }}" == "true" ]]; then
-            FORCE_FLAG="--force"
-            echo "Force explanation regeneration ON (Reason: Law Update or Manual Input)."
-          fi
-
-          max_batches=200
-          for i in $(seq 1 $max_batches); do
-            echo "===== batch $i ====="
-
-            # 重要：pullしない（buildでdistが汚れるのでrebaseできない）
-            echo "=== git status BEFORE generate ==="
-            git status --porcelain | head -n 80
-
-            echo "=== sanity check: first line explanation length (r03) ==="
-            node -e "
-            const fs=require('fs'), z=require('zlib'), rl=require('readline');
-            const s=fs.createReadStream('dist/bundles/r03.jsonl.gz').pipe(z.createGunzip());
-            const r=rl.createInterface({input:s});
-            r.on('line', (line)=>{ 
-              const o=JSON.parse(line); 
-              const e=o.explanation;
-              console.log({id:o.id, expl_type:(e===null?'null':typeof e), expl_len:(typeof e==='string'?e.trim().length:'n/a')});
-              r.close();
-            });
-            "
-
-            node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
-
-            if git diff --quiet; then
-              echo "No changes detected. Done."
-              break
-            fi
-
-            git add -A dist
-            git commit -m "chore: auto-generate explanations (batch $i) [skip ci]"
-            git push origin HEAD:main
-          done
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    steps:
-      - uses: actions/deploy-pages@v4
+          git add -A dist
+          git commit -m "chore: build dist [skip ci]"
+          git push origin HEAD:main
