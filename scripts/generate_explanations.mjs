@@ -45,6 +45,7 @@ const LIMIT = Number(getArg("--limit", "0")); // 0 = unlimited
 const DRY_RUN = hasFlag("--dry-run");
 const FORCE = hasFlag("--force");
 const ONLY_BUNDLE = getArg("--bundle", "");
+const DEBUG_FIRST_N = parseInt(process.env.DEBUG_FIRST_N ?? "0", 10);
 const LOG_PER_QUESTION = hasFlag("--log-per-question");
 
 const VS_ID_FILE = path.join(".openai", "vector_store_id.txt");
@@ -81,6 +82,35 @@ function normalizeChoices(q) {
     }
 
     return null;
+}
+
+async function countEmptyExplanationsInBundle(bundlePath) {
+    const inStream = fs.createReadStream(bundlePath).pipe(zlib.createGunzip());
+    const rl = readline.createInterface({ input: inStream, crlfDelay: Infinity });
+
+    let total = 0;
+    let empty = 0;
+    let parseError = 0;
+
+    try {
+        for await (const line of rl) {
+            const s = line.trim();
+            if (!s) continue;
+
+            total++;
+            try {
+                const obj = JSON.parse(s);
+                if (isExplanationEmpty(obj)) empty++;
+            } catch (e) {
+                parseError++;
+            }
+        }
+    } finally {
+        rl.close();
+        inStream.destroy();
+    }
+
+    return { total, empty, parseError };
 }
 
 function isExplanationEmpty(q) {
@@ -255,6 +285,17 @@ async function withRetry(fn, { tries = 4, label = "" } = {}) {
 }
 
 async function processOneBundle(vsId, bundlePath) {
+    // --- デバッグ: 生成前に explanation 空件数を数える ---
+    if (process.env.PRECOUNT_EMPTY === "1") {
+        const tPre = Date.now();
+        const { total, empty, parseError } = await countEmptyExplanationsInBundle(bundlePath);
+        const msPre = Date.now() - tPre;
+        console.log(
+            `[pre] bundle=${path.basename(bundlePath)} total=${total} empty_explanation=${empty} ` +
+            `parse_error=${parseError} ms=${msPre}`
+        );
+    }
+
     const tmpOut = bundlePath + ".tmp";
     const inStream = fs.createReadStream(bundlePath).pipe(zlib.createGunzip());
     const rl = readline.createInterface({ input: inStream, crlfDelay: Infinity });
@@ -289,15 +330,46 @@ async function processOneBundle(vsId, bundlePath) {
 
         processed++;
 
+        const qid =
+            obj.id ??
+            obj.qid ??
+            obj.question_id ??
+            obj.meta?.id ??
+            `line${processed}`;
+
+        // --- 先頭N件のスキップ確認ログ（skip側） ---
+        if (DEBUG_FIRST_N > 0 && processed <= DEBUG_FIRST_N) {
+            console.log(
+                `[dbg] pre bundle=${path.basename(bundlePath)} idx=${processed} id=${qid} ` +
+                `force=${FORCE} explanationEmpty=${isExplanationEmpty(obj)}`
+            );
+        }
+
         if (!FORCE && !isExplanationEmpty(obj)) {
             skipped++;
+
+            // --- 先頭N件のスキップ確認ログ（skip確定） ---
+            if (DEBUG_FIRST_N > 0 && processed <= DEBUG_FIRST_N) {
+                console.log(
+                    `[dbg] skip bundle=${path.basename(bundlePath)} idx=${processed} id=${qid} ` +
+                    `reason=explanation_present`
+                );
+            }
+
             outStream.write(JSON.stringify(obj) + "\n");
             continue;
         }
 
+        // --- 先頭N件の生成確認ログ（generate確定） ---
+        if (DEBUG_FIRST_N > 0 && processed <= DEBUG_FIRST_N) {
+            console.log(
+                `[dbg] gen  bundle=${path.basename(bundlePath)} idx=${processed} id=${qid} ` +
+                `reason=explanation_empty_or_force`
+            );
+        }
+
         const promptObj = buildPrompt(obj);
 
-        const qid = obj.id ?? obj.qid ?? obj.question_id ?? obj.meta?.id ?? `line${processed}`;
         const t0 = Date.now();
         const { parsed: result, usage } = await withRetry(() => callOpenAI(vsId, promptObj), {
             label: `${path.basename(bundlePath)}:${qid}`,

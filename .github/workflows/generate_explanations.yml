@@ -1,4 +1,4 @@
-name: Generate explanations (no build)
+name: Generate explanations
 
 on:
   workflow_dispatch:
