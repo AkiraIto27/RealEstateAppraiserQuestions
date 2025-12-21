@@ -72,10 +72,11 @@ jobs:
             echo "Force explanation regeneration ON (Reason: Law Update or Manual Input)."
           fi
 
+          git pull --rebase origin main || true
+
           max_batches=200
           for i in $(seq 1 $max_batches); do
             echo "===== batch $i ====="
-            git pull --rebase origin main || true
             node scripts/generate_explanations.mjs --limit 5 $FORCE_FLAG
 
             if git diff --quiet; then
