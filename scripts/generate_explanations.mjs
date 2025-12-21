@@ -229,13 +229,19 @@ async function withRetry(fn, { tries = 4, label = "" } = {}) {
         } catch (e) {
             lastErr = e;
             const msg = String(e?.message ?? e);
+
+            const isInsufficientQuota =
+                msg.toLowerCase().includes("exceeded your current quota") ||
+                msg.toLowerCase().includes("insufficient_quota");
+
             const isRetryable =
-                msg.includes("429") ||
-                msg.includes("rate limit") ||
-                msg.includes("503") ||
-                msg.includes("502") ||
-                msg.includes("timeout") ||
-                msg.includes("ETIMEDOUT");
+                !isInsufficientQuota && (
+                    msg.includes("rate limit") ||
+                    msg.includes("503") ||
+                    msg.includes("502") ||
+                    msg.includes("timeout") ||
+                    msg.includes("ETIMEDOUT")
+                );
 
             if (!isRetryable || i === tries - 1) throw e;
 
