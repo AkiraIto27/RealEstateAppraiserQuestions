@@ -30,6 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Debug dist state
+        run: |
+            git status --porcelain
+            git log -1 --oneline
+            ls -la dist || true
+            # ここは実際の bundlePath に合わせて変更
+            # 例: gzip の中身を先頭だけ表示
+            zcat dist/r03.jsonl.gz | head -n 3 || true
+
+
       - name: Generate explanations (batched, no build)
         run: |
           set -euo pipefail

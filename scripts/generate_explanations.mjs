@@ -285,6 +285,25 @@ async function withRetry(fn, { tries = 4, label = "" } = {}) {
 }
 
 async function processOneBundle(vsId, bundlePath) {
+    console.log(`[in] bundlePath=${bundlePath}`);
+
+    if (process.env.DUMP_HEAD_LINES === "1") {
+        const inStream2 = fs.createReadStream(bundlePath).pipe(zlib.createGunzip());
+        const rl2 = readline.createInterface({ input: inStream2, crlfDelay: Infinity });
+
+        let i = 0;
+        for await (const line of rl2) {
+            const s = line.trim();
+            if (!s) continue;
+            i++;
+            console.log(`[head] ${path.basename(bundlePath)}:${i} ${s.slice(0, 300)}${s.length > 300 ? "..." : ""}`);
+            if (i >= 3) break;
+        }
+
+        rl2.close();
+        inStream2.destroy();
+    }
+
     // --- デバッグ: 生成前に explanation 空件数を数える ---
     if (process.env.PRECOUNT_EMPTY === "1") {
         const tPre = Date.now();
