@@ -249,6 +249,140 @@ node scripts/generate_explanations.mjs --model gpt-5-mini --limit 5
 - `--limit 5`：最大処理件数（テスト/チェックポイント用）
 - `--dry-run`：生成はするがファイルを書き換えない
 
+## ローカルRAG（Chroma + Ollama）で解説生成
+
+OpenAI API を使わず、ローカル環境だけで `dist/bundles/*.jsonl.gz` の `explanation` を埋める手順です。
+Embedding は `cl-nagoya/ruri-v3-310m`、生成 LLM は Ollama の `qwen2.5:7b-instruct` を前提にしています。
+
+### 前提
+
+- macOS（Apple Silicon推奨、16GBメモリでも動作可）
+- Python 3.10+（venvを使用）
+- Node.js（XML→TXT索引の更新用）
+- Homebrew（Ollama導入に使う場合）
+
+### 1) dist/bundles の存在確認
+
+まず JSONL が存在することを確認します。
+
+```bash
+ls dist/bundles
+```
+
+`r03.jsonl.gz` などが表示されればOKです。
+
+### 2) XML → TXT索引（laws_index）の最新化
+
+`laws/2024-09-01` のXMLから `laws_index/2024-09-01` を生成します。
+（既に生成済みならスキップしてOK）
+
+```bash
+node scripts/laws_xml_to_txt.mjs 2024-09-01
+```
+
+### 3) Python環境の準備
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r scripts/requirements-rag.txt
+```
+
+> `sentencepiece` が足りないと言われた場合は  
+> `pip install sentencepiece` を追加で実行してください。
+
+### 4) Ollamaのインストールと起動
+
+```bash
+brew install ollama
+brew services start ollama
+```
+
+モデル取得:
+
+```bash
+ollama pull qwen2.5:7b-instruct
+```
+
+### 5) Chromaインデックス作成（RAGの土台）
+
+`laws_index/2024-09-01` を埋め込み化してローカルに保存します。
+
+```bash
+python scripts/rag_local.py index --date 2024-09-01 --max-chars 1200 --batch-size 16 --force --log-every 1
+```
+
+無反応に見える場合は処理中です。重い場合は `--batch-size 4` に下げてください。
+
+### 6) 解説の試験生成（まずは少数）
+
+```bash
+python scripts/rag_local.py explain --bundle r07.jsonl.gz --limit 5 --log-per-question
+```
+
+### 7) 全量生成（dist/bundles を上書き）
+
+```bash
+python scripts/rag_local.py explain
+```
+
+`explanation` が空の問題だけを埋めます。上書きしたい場合は `--force` を付けてください。
+
+### 8) タイムアウト対策
+
+Ollamaが遅い場合はタイムアウトを延ばします。
+
+```bash
+python scripts/rag_local.py explain --timeout 300
+```
+
+さらに軽くする場合:
+
+```bash
+python scripts/rag_local.py explain --timeout 300 --max-results 4 --max-context-chars 8000
+```
+
+### 9) 失敗したIDだけ再実行
+
+JSONエラー等が出たIDだけを再実行できます。`explain` 実行時は、デフォルトで `rag_errors.txt` にエラーIDが自動追記されます（不要なら `--no-error-log`）。
+
+1) エラーIDが自動でログに溜まる（通常は何もしなくてOK）:
+
+```bash
+python scripts/rag_local.py explain
+```
+
+2) エラーIDだけ再実行:
+
+```bash
+python scripts/rag_local.py explain --ids-file rag_errors.txt
+```
+
+3) 既に埋まっているIDを上書きしたい場合:
+
+```bash
+python scripts/rag_local.py explain --ids-file rag_errors.txt --force
+```
+
+4) 直接IDを指定して再実行したい場合:
+
+```bash
+python scripts/rag_local.py explain --only-ids r07-012,r07-022,r07-048 --force
+```
+
+ログをクリアしたい場合は `> rag_errors.txt` で空にしてください。
+
+### 10) 対話（RAGチャット）で確認したい場合
+
+```bash
+python scripts/rag_local.py chat --topic 土地基本法
+```
+
+### 参考: スクリプトの場所
+
+- ローカルRAG本体: `scripts/rag_local.py`
+- 依存パッケージ: `scripts/requirements-rag.txt`
+
 ## GitHub Actions（自動化フロー）
 
 ### 概要：年間スケジュール

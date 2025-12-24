@@ -1,11 +1,11 @@
 {
   "schema_version": "1.1.0",
   "content_version": "2025.12.21",
-  "generated_at": "2025-12-21T04:12:08.204Z",
+  "generated_at": "2025-12-24T15:32:08.633059+00:00",
   "bundles": [
     {
       "id": "r03",
-      "title": "令和3年 全80問",
+      "title": "\u4ee4\u548c3\u5e74 \u516880\u554f",
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
@@ -16,7 +16,7 @@
     },
     {
       "id": "r04",
-      "title": "令和4年 全80問",
+      "title": "\u4ee4\u548c4\u5e74 \u516880\u554f",
       "year": 2022,
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
@@ -27,7 +27,7 @@
     },
     {
       "id": "r05",
-      "title": "令和5年 全80問",
+      "title": "\u4ee4\u548c5\u5e74 \u516880\u554f",
       "year": 2023,
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
@@ -38,7 +38,7 @@
     },
     {
       "id": "r06",
-      "title": "令和6年 全80問",
+      "title": "\u4ee4\u548c6\u5e74 \u516880\u554f",
       "year": 2024,
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
@@ -49,7 +49,7 @@
     },
     {
       "id": "r07",
-      "title": "令和7年 全80問",
+      "title": "\u4ee4\u548c7\u5e74 \u516880\u554f",
       "year": 2025,
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",

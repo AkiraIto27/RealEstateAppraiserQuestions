@@ -1,0 +1,7 @@
+{
+  "date": "2024-09-01",
+  "model": "cl-nagoya/ruri-v3-310m",
+  "collection": "laws_2024-09-01",
+  "max_chars": 1200,
+  "doc_prefix": "passage: "
+}
