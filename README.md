@@ -378,6 +378,16 @@ python scripts/rag_local.py explain --only-ids r07-012,r07-022,r07-048 --force
 python scripts/rag_local.py chat --topic 土地基本法
 ```
 
+### 11) 作業を終える（Python/venv/Ollamaの終了）
+
+```bash
+deactivate
+```
+
+- 通常の `python scripts/...` は完了すると自動終了します
+- 対話モード（REPL）は `exit()` か `Ctrl-D` で終了
+- `ollama serve` を手動起動している場合は `Ctrl-C` で終了（サービス起動なら `brew services stop ollama`）
+
 ### 参考: スクリプトの場所
 
 - ローカルRAG本体: `scripts/rag_local.py`
