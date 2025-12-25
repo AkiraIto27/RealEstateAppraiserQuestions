@@ -1,11 +1,7 @@
 {
   "schema_version": "1.1.0",
   "content_version": "2025.12.25",
-<<<<<<< Updated upstream
-  "generated_at": "2025-12-25T02:59:08.707Z",
-=======
-  "generated_at": "2025-12-25T03:47:32.787Z",
->>>>>>> Stashed changes
+  "generated_at": "2025-12-25T03:54:02.219Z",
   "bundles": [
     {
       "id": "r03",
@@ -16,11 +12,7 @@
       "size": 63909,
       "sha256": "ac3d9a5bf4ee1eb7d635082a11e113b646176b58b67c09174256417f91681308",
       "etag": "W/\"r03@2025.12.25\"",
-<<<<<<< Updated upstream
-      "updated_at": "2025-12-25T02:59:08.707Z"
-=======
-      "updated_at": "2025-12-25T03:47:32.787Z"
->>>>>>> Stashed changes
+      "updated_at": "2025-12-25T03:54:02.219Z"
     },
     {
       "id": "r04",
@@ -31,11 +23,7 @@
       "size": 48571,
       "sha256": "bd1d9ecd7c084b9369b1ad49be59386d574a96a8fd5fa09fe2a7b4e78a82f34e",
       "etag": "W/\"r04@2025.12.25\"",
-<<<<<<< Updated upstream
-      "updated_at": "2025-12-25T02:59:08.707Z"
-=======
-      "updated_at": "2025-12-25T03:47:32.787Z"
->>>>>>> Stashed changes
+      "updated_at": "2025-12-25T03:54:02.219Z"
     },
     {
       "id": "r05",
@@ -46,11 +34,7 @@
       "size": 51219,
       "sha256": "661758530dbb8b545725e9736b28634c5ce61b626eb1875677902d8051aec7b0",
       "etag": "W/\"r05@2025.12.25\"",
-<<<<<<< Updated upstream
-      "updated_at": "2025-12-25T02:59:08.707Z"
-=======
-      "updated_at": "2025-12-25T03:47:32.787Z"
->>>>>>> Stashed changes
+      "updated_at": "2025-12-25T03:54:02.219Z"
     },
     {
       "id": "r06",
@@ -61,11 +45,7 @@
       "size": 48235,
       "sha256": "92a6d7a9d560a8800044d65c19a75509c57f03a686eb322de741201fe15e3fc2",
       "etag": "W/\"r06@2025.12.25\"",
-<<<<<<< Updated upstream
-      "updated_at": "2025-12-25T02:59:08.707Z"
-=======
-      "updated_at": "2025-12-25T03:47:32.787Z"
->>>>>>> Stashed changes
+      "updated_at": "2025-12-25T03:54:02.219Z"
     },
     {
       "id": "r07",
@@ -76,11 +56,7 @@
       "size": 52074,
       "sha256": "898562a2d12a1ba2bd60348a5f7abecc745dba38f52f1d41a84d976563060994",
       "etag": "W/\"r07@2025.12.25\"",
-<<<<<<< Updated upstream
-      "updated_at": "2025-12-25T02:59:08.707Z"
-=======
-      "updated_at": "2025-12-25T03:47:32.787Z"
->>>>>>> Stashed changes
+      "updated_at": "2025-12-25T03:54:02.219Z"
     }
   ]
 }
