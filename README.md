@@ -261,7 +261,7 @@ Embedding は `cl-nagoya/ruri-v3-310m`、生成 LLM は Ollama の `qwen2.5:7b-i
 - Node.js（XML→TXT索引の更新用）
 - Homebrew（Ollama導入に使う場合）
 
-### 1) dist/bundles の存在確認
+### 1) dist/bundles の存在確認（入力元）
 
 まず JSONL が存在することを確認します。
 
@@ -269,7 +269,7 @@ Embedding は `cl-nagoya/ruri-v3-310m`、生成 LLM は Ollama の `qwen2.5:7b-i
 ls dist/bundles
 ```
 
-`r03.jsonl.gz` などが表示されればOKです。
+`r03.jsonl.gz` などが表示されればOKです。解説の出力先は `dist_with_ai/bundles` になります。
 
 ### 2) XML → TXT索引（laws_index）の最新化
 
@@ -320,7 +320,9 @@ python scripts/rag_local.py index --date 2024-09-01 --max-chars 1200 --batch-siz
 python scripts/rag_local.py explain --bundle r07.jsonl.gz --limit 5 --log-per-question
 ```
 
-### 7) 全量生成（dist/bundles を上書き）
+生成結果は `dist_with_ai/bundles` に書き込まれます（入力は `dist/bundles`）。
+
+### 7) 全量生成（dist_with_ai/bundles を上書き）
 
 ```bash
 python scripts/rag_local.py explain

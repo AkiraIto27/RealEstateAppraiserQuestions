@@ -25,6 +25,9 @@ DEFAULT_TEMPERATURE = 0.2
 DEFAULT_CONTEXT_CHARS = 12000
 DEFAULT_LOG_EVERY = 10
 DEFAULT_ERROR_LOG = "rag_errors.txt"
+DEFAULT_DIST_DIR = "dist_with_ai"
+DEFAULT_INPUT_BUNDLES_DIR = "dist/bundles"
+DEFAULT_OUTPUT_BUNDLES_DIR = "dist_with_ai/bundles"
 
 
 def list_subdirs(dir_path: Path) -> List[str]:
@@ -409,6 +412,33 @@ def load_id_set(only_ids: str, ids_file: str) -> Optional[set]:
     return ids if ids else None
 
 
+def load_existing_explanations(bundle_path: Path) -> Dict[str, Dict]:
+    if not bundle_path.exists():
+        return {}
+    out: Dict[str, Dict] = {}
+    try:
+        with gzip.open(bundle_path, "rt", encoding="utf-8") as fin:
+            for line in fin:
+                line = line.strip("\n")
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                qid = obj.get("id")
+                if not qid:
+                    continue
+                out[qid] = {
+                    "explanation": obj.get("explanation"),
+                    "law_citations": obj.get("law_citations"),
+                    "updated_at": obj.get("updated_at"),
+                }
+    except Exception:
+        return {}
+    return out
+
+
 def maybe_update_manifest(dist_dir: Path) -> None:
     manifest_path = dist_dir / "manifest.json"
     if not manifest_path.exists():
@@ -435,13 +465,23 @@ def explain_bundles(args: argparse.Namespace) -> int:
         raise FileNotFoundError(f"laws_index dir not found: {laws_index_dir}")
 
     dist_dir = Path(args.dist)
-    bundles_dir = Path(args.bundles)
+    input_bundles_dir = Path(args.bundles)
+    output_bundles_dir = Path(args.output_bundles)
+    dist_dir.mkdir(parents=True, exist_ok=True)
+    output_bundles_dir.mkdir(parents=True, exist_ok=True)
 
-    bundle_files = sorted([p for p in bundles_dir.glob("*.jsonl.gz")])
+    bundle_files = sorted([p for p in input_bundles_dir.glob("*.jsonl.gz")])
     if args.bundle:
-        target = args.bundle
-        target_path = bundles_dir / target if not os.path.isabs(target) else Path(target)
-        bundle_files = [p for p in bundle_files if p == target_path]
+        target = Path(args.bundle)
+        target_base = target.name
+        bundle_files = [p for p in bundle_files if p.name == target_base]
+        if not bundle_files:
+            fallback_in = input_bundles_dir / target_base
+            fallback_out = output_bundles_dir / target_base
+            if fallback_in.exists():
+                bundle_files = [fallback_in]
+            elif fallback_out.exists():
+                bundle_files = [fallback_out]
 
     if not bundle_files:
         raise FileNotFoundError("No bundle files found")
@@ -486,14 +526,18 @@ def explain_bundles(args: argparse.Namespace) -> int:
         if args.log_all:
             print(msg)
 
-    for bundle_path in bundle_files:
-        tmp_path = bundle_path.with_suffix(bundle_path.suffix + ".tmp")
+    for in_bundle_path in bundle_files:
+        out_bundle_path = output_bundles_dir / in_bundle_path.name
+        if not in_bundle_path.exists():
+            raise FileNotFoundError(f"Bundle not found: {in_bundle_path}")
+        tmp_path = out_bundle_path.with_suffix(out_bundle_path.suffix + ".tmp")
         generated = 0
         skipped = 0
         processed = 0
         line_no = 0
+        existing = load_existing_explanations(out_bundle_path)
 
-        with gzip.open(bundle_path, "rt", encoding="utf-8") as fin, gzip.open(tmp_path, "wt", encoding="utf-8") as fout:
+        with gzip.open(in_bundle_path, "rt", encoding="utf-8") as fin, gzip.open(tmp_path, "wt", encoding="utf-8") as fout:
             for line in fin:
                 line_no += 1
                 line = line.strip("\n")
@@ -510,6 +554,14 @@ def explain_bundles(args: argparse.Namespace) -> int:
                 processed += 1
 
                 qid = obj.get("id", f"line{processed}")
+                prev = existing.get(qid)
+                if prev:
+                    if prev.get("explanation"):
+                        obj["explanation"] = prev.get("explanation")
+                    if prev.get("law_citations") is not None:
+                        obj["law_citations"] = prev.get("law_citations")
+                    if "updated_at" in obj and prev.get("updated_at"):
+                        obj["updated_at"] = prev.get("updated_at")
 
                 if only_ids is not None and qid not in only_ids:
                     log_line(f"[q] id={qid} status=skipped reason=not_in_ids")
@@ -610,14 +662,14 @@ def explain_bundles(args: argparse.Namespace) -> int:
                 fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
                 if generated and generated % 5 == 0:
-                    print(f"[{bundle_path.name}] generated={generated} skipped={skipped} processed={processed}")
+                    print(f"[{in_bundle_path.name}] generated={generated} skipped={skipped} processed={processed}")
 
         if args.dry_run:
             tmp_path.unlink(missing_ok=True)
-            print(f"[dry-run] {bundle_path} generated={generated} skipped={skipped}")
+            print(f"[dry-run] {out_bundle_path} generated={generated} skipped={skipped}")
         else:
-            tmp_path.replace(bundle_path)
-            print(f"[update] {bundle_path} generated={generated} skipped={skipped}")
+            tmp_path.replace(out_bundle_path)
+            print(f"[update] {out_bundle_path} generated={generated} skipped={skipped}")
 
     if not args.dry_run:
         maybe_update_manifest(dist_dir)
@@ -721,10 +773,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_index.add_argument("--log-every", type=int, default=DEFAULT_LOG_EVERY, help="log every N batches")
     p_index.set_defaults(func=index_laws)
 
-    p_explain = sub.add_parser("explain", help="fill explanations in dist/bundles")
+    p_explain = sub.add_parser("explain", help="fill explanations into output bundles")
     add_common(p_explain)
-    p_explain.add_argument("--dist", default="dist", help="dist dir")
-    p_explain.add_argument("--bundles", default="dist/bundles", help="bundles dir")
+    p_explain.add_argument("--dist", default=DEFAULT_DIST_DIR, help="output dist dir")
+    p_explain.add_argument("--bundles", default=DEFAULT_INPUT_BUNDLES_DIR, help="input bundles dir")
+    p_explain.add_argument("--output-bundles", default=DEFAULT_OUTPUT_BUNDLES_DIR, help="output bundles dir")
     p_explain.add_argument("--bundle", default="", help="single bundle file to process")
     p_explain.add_argument("--limit", type=int, default=0, help="limit generated per bundle")
     p_explain.add_argument("--force", action="store_true", help="regenerate even if explanation exists")
