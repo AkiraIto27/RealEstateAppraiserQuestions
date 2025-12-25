@@ -20,6 +20,12 @@ const getArg = (name, def) => {
 };
 
 const DIST_DIR = getArg('--dist', 'dist');
+const DIST_BASENAME = path.basename(path.resolve(DIST_DIR));
+let BASE_URL = getArg('--base-url', DIST_BASENAME === 'dist' ? '' : `/${DIST_BASENAME}`);
+if (BASE_URL) {
+    if (!BASE_URL.startsWith('/')) BASE_URL = '/' + BASE_URL;
+    if (BASE_URL.endsWith('/')) BASE_URL = BASE_URL.slice(0, -1);
+}
 const BUNDLES_DIR = path.join(DIST_DIR, 'bundles');
 const MANIFEST_FILE = path.join(DIST_DIR, 'manifest.json');
 
@@ -143,7 +149,7 @@ async function main() {
             title: toTitle(header.era, header.era_year, count),
             year: Number(yy),
             items: count,
-            url: `/bundles/${f}`,
+            url: `${BASE_URL}/bundles/${f}`,
             size: size,
             sha256: sha256,
             etag: `W/"${id}@${contentVersion}"`,

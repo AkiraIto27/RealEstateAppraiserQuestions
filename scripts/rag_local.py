@@ -519,6 +519,7 @@ def explain_bundles(args: argparse.Namespace) -> int:
         "出力は日本語で、JSONのみを返してください。キーは explanation（string）と law_citations（array of strings）です。\n"
         "explanationの構成は次の順にしてください：\n"
         "1) 正解はX番。 2) 理由（法令根拠ベース） 3) 各選択肢が正誤になる理由（1〜5または提示されたchoicesに対応）\n"
+        "条文を本文内で述べる際は、必ず法令名も併記してください（例: 「不動産の鑑定評価に関する法律 第1条」）。\n"
         "law_citations には、参照した条文を「法令名 第○条（必要なら項・号）」の形式で列挙してください（複数可）。\n"
         "根拠条文を特定できない場合は、その旨をexplanationに明記し、law_citationsは空配列にしてください。"
     )
