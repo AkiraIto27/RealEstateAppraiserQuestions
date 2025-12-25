@@ -1,7 +1,11 @@
 {
   "schema_version": "1.1.0",
   "content_version": "2025.12.25",
+<<<<<<< Updated upstream
   "generated_at": "2025-12-25T02:59:08.707Z",
+=======
+  "generated_at": "2025-12-25T03:47:32.787Z",
+>>>>>>> Stashed changes
   "bundles": [
     {
       "id": "r03",
@@ -9,10 +13,14 @@
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 63846,
-      "sha256": "dc9efebe1ab028eaba2f604a7e332545db5139d898a1b53a0d948361dbb97827",
+      "size": 63909,
+      "sha256": "ac3d9a5bf4ee1eb7d635082a11e113b646176b58b67c09174256417f91681308",
       "etag": "W/\"r03@2025.12.25\"",
+<<<<<<< Updated upstream
       "updated_at": "2025-12-25T02:59:08.707Z"
+=======
+      "updated_at": "2025-12-25T03:47:32.787Z"
+>>>>>>> Stashed changes
     },
     {
       "id": "r04",
@@ -20,10 +28,14 @@
       "year": 2022,
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
-      "size": 48620,
-      "sha256": "6c72597aac42c6645f85ca6bb8bfeabac9665dfa9395aa5323a1c6f2a0dfe4df",
+      "size": 48571,
+      "sha256": "bd1d9ecd7c084b9369b1ad49be59386d574a96a8fd5fa09fe2a7b4e78a82f34e",
       "etag": "W/\"r04@2025.12.25\"",
+<<<<<<< Updated upstream
       "updated_at": "2025-12-25T02:59:08.707Z"
+=======
+      "updated_at": "2025-12-25T03:47:32.787Z"
+>>>>>>> Stashed changes
     },
     {
       "id": "r05",
@@ -31,10 +43,14 @@
       "year": 2023,
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
-      "size": 51232,
-      "sha256": "61260623221e90acf3c7525a2fbe7c54a37a85b4d13b7b372d9a7bd4f95ef7f0",
+      "size": 51219,
+      "sha256": "661758530dbb8b545725e9736b28634c5ce61b626eb1875677902d8051aec7b0",
       "etag": "W/\"r05@2025.12.25\"",
+<<<<<<< Updated upstream
       "updated_at": "2025-12-25T02:59:08.707Z"
+=======
+      "updated_at": "2025-12-25T03:47:32.787Z"
+>>>>>>> Stashed changes
     },
     {
       "id": "r06",
@@ -42,10 +58,14 @@
       "year": 2024,
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
-      "size": 48707,
-      "sha256": "309621527b5e3e4215eafe9cbd8419f46050468b9529b2b682d78dcea6938e1e",
+      "size": 48235,
+      "sha256": "92a6d7a9d560a8800044d65c19a75509c57f03a686eb322de741201fe15e3fc2",
       "etag": "W/\"r06@2025.12.25\"",
+<<<<<<< Updated upstream
       "updated_at": "2025-12-25T02:59:08.707Z"
+=======
+      "updated_at": "2025-12-25T03:47:32.787Z"
+>>>>>>> Stashed changes
     },
     {
       "id": "r07",
@@ -53,10 +73,14 @@
       "year": 2025,
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",
-      "size": 52199,
-      "sha256": "83b4553d609cae20802e80482b28d0534734ff9625c9ad4d33a3174cd905efc5",
+      "size": 52074,
+      "sha256": "898562a2d12a1ba2bd60348a5f7abecc745dba38f52f1d41a84d976563060994",
       "etag": "W/\"r07@2025.12.25\"",
+<<<<<<< Updated upstream
       "updated_at": "2025-12-25T02:59:08.707Z"
+=======
+      "updated_at": "2025-12-25T03:47:32.787Z"
+>>>>>>> Stashed changes
     }
   ]
 }

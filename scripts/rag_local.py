@@ -515,6 +515,7 @@ def explain_bundles(args: argparse.Namespace) -> int:
         "あなたは不動産鑑定士試験（短答）の解説作成者です。\n"
         "必ず提供されたContext（法令抜粋）の記載に基づいて解説してください。Contextに無い内容は推測しないでください。\n"
         "ContextがNO_CONTEXTの場合は、根拠が見つからない旨を説明し、law_citationsは空配列にしてください。\n"
+        "出力はすべて日本語で行ってください。中国語や英語は使わないでください。\n"
         "出力は日本語で、JSONのみを返してください。キーは explanation（string）と law_citations（array of strings）です。\n"
         "explanationの構成は次の順にしてください：\n"
         "1) 正解はX番。 2) 理由（法令根拠ベース） 3) 各選択肢が正誤になる理由（1〜5または提示されたchoicesに対応）\n"
