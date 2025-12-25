@@ -23,6 +23,11 @@ jobs:
       - name: Run update_manifest.mjs
         run: |
           node scripts/update_manifest.mjs
+          if [ -d dist_with_ai/bundles ]; then
+            node scripts/update_manifest.mjs --dist dist_with_ai
+          else
+            echo "dist_with_ai/bundles not found; skip"
+          fi
 
       - name: Commit and Push changes
         run: |
@@ -30,6 +35,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           git add dist/manifest.json
+          if [ -f dist_with_ai/manifest.json ]; then
+            git add dist_with_ai/manifest.json
+          fi
           
           if git diff --cached --quiet; then
             echo "No changes to manifest."
@@ -38,10 +46,21 @@ jobs:
             git push
           fi
 
+      - name: Prepare Pages artifact
+        run: |
+          set -euo pipefail
+          rm -rf public
+          mkdir -p public
+          cp -a dist/. public/
+          if [ -d dist_with_ai ]; then
+            mkdir -p public/dist_with_ai
+            cp -a dist_with_ai/. public/dist_with_ai/
+          fi
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./public
 
   deploy:
     needs: update-manifest
