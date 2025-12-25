@@ -5,7 +5,8 @@ on:
   push:
     branches: [ main ]
     paths-ignore:
-      - "dist/**"   # dist をコミットしても build が無限ループしないように
+      - "dist/**"          # dist をコミットしても build が無限ループしないように
+      - "dist_with_ai/**" # dist_with_ai をコミットしても build が無限ループしないように
 
 jobs:
   build:
@@ -34,11 +35,20 @@ jobs:
           echo "=== dist changes (after build) ==="
           git status --porcelain dist | head -n 200
 
+      - name: Update dist_with_ai manifest if present
+        run: |
+          set -euo pipefail
+          if [ -d dist_with_ai/bundles ]; then
+            node scripts/update_manifest.mjs --dist dist_with_ai
+          else
+            echo "dist_with_ai/bundles not found; skip"
+          fi
+
       - name: Commit and push dist if changed
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- dist; then
+          if git diff --quiet -- dist -- dist_with_ai; then
             echo "No dist changes. Done."
             exit 0
           fi
@@ -46,6 +56,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A dist
+          git add -A dist dist_with_ai
           git commit -m "chore: build dist [skip ci]"
           git push origin HEAD:main
