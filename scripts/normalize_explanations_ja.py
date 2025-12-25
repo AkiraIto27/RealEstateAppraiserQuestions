@@ -19,12 +19,15 @@ DEFAULT_LOG = "rag_errors.txt"
 
 # Simplified Chinese markers (characters/words uncommon in Japanese)
 SIMPLIFIED_CHARS = set(
-    "为发应规类权产现无别对过关并么吗们书业义实东线话举处还证复议没选"  # noqa: E501
+    "为发应规类权产现无别对过关并么吗们书业义实东线话举处还证复议没选动该责"
+    "据综从给则于众请仅仅这哪吗谁让须视较总确错题项"
 )
 CHINESE_WORDS = [
     "根据",
     "因此",
     "由于",
+    "依据",
+    "按照",
     "可以",
     "应该",
     "不得",
@@ -39,6 +42,8 @@ CHINESE_WORDS = [
     "或者",
     "并且",
     "并非",
+    "本题",
+    "题干",
     "选项",
     "正确",
     "错误",
