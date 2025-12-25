@@ -482,20 +482,28 @@ def explain_bundles(args: argparse.Namespace) -> int:
         "根拠条文を特定できない場合は、その旨をexplanationに明記し、law_citationsは空配列にしてください。"
     )
 
+    def log_line(msg: str) -> None:
+        if args.log_all:
+            print(msg)
+
     for bundle_path in bundle_files:
         tmp_path = bundle_path.with_suffix(bundle_path.suffix + ".tmp")
         generated = 0
         skipped = 0
         processed = 0
+        line_no = 0
 
         with gzip.open(bundle_path, "rt", encoding="utf-8") as fin, gzip.open(tmp_path, "wt", encoding="utf-8") as fout:
             for line in fin:
+                line_no += 1
                 line = line.strip("\n")
                 if not line:
+                    log_line(f"[q] line={line_no} status=empty_line")
                     continue
                 try:
                     obj = json.loads(line)
                 except Exception:
+                    log_line(f"[q] line={line_no} status=parse_error")
                     fout.write(line + "\n")
                     continue
 
@@ -504,15 +512,18 @@ def explain_bundles(args: argparse.Namespace) -> int:
                 qid = obj.get("id", f"line{processed}")
 
                 if only_ids is not None and qid not in only_ids:
+                    log_line(f"[q] id={qid} status=skipped reason=not_in_ids")
                     fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
                     continue
 
                 if args.limit > 0 and generated >= args.limit:
+                    log_line(f"[q] id={qid} status=skipped reason=limit_reached")
                     fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
                     continue
 
                 if not args.force and not is_explanation_empty(obj):
                     skipped += 1
+                    log_line(f"[q] id={qid} status=skipped reason=explanation_present")
                     fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
                     continue
 
@@ -584,7 +595,7 @@ def explain_bundles(args: argparse.Namespace) -> int:
                         obj["updated_at"] = datetime.now(timezone.utc).isoformat()
 
                     generated += 1
-                    if args.log_per_question:
+                    if args.log_per_question or args.log_all:
                         ms = int((time.time() - start) * 1000)
                         print(f"[q] id={qid} ms={ms} results={len(docs)}")
                 except Exception as e:
@@ -594,6 +605,7 @@ def explain_bundles(args: argparse.Namespace) -> int:
                         with open(log_path, "a", encoding="utf-8") as f:
                             f.write(qid + "\n")
                         logged_error_ids.add(qid)
+                    log_line(f"[q] id={qid} status=error err={e}")
 
                 fout.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
@@ -724,6 +736,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_explain.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE, help="LLM temperature")
     p_explain.add_argument("--timeout", type=int, default=120, help="LLM request timeout seconds")
     p_explain.add_argument("--log-per-question", action="store_true", help="log per question timing")
+    p_explain.add_argument("--log-all", action="store_true", help="log every line (including skips/errors)")
     p_explain.add_argument("--only-ids", default="", help="comma-separated question IDs to process")
     p_explain.add_argument("--ids-file", default="", help="file with question IDs to process (one per line)")
     p_explain.add_argument("--error-log", default=DEFAULT_ERROR_LOG, help="append failed question IDs to this file")
