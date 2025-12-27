@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
-  "content_version": "2025.12.25",
-  "generated_at": "2025-12-25T10:50:01.889Z",
+  "content_version": "2025.12.27",
+  "generated_at": "2025-12-27T16:11:57.254Z",
   "bundles": [
     {
       "id": "r03",
@@ -9,10 +9,10 @@
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 63910,
-      "sha256": "48a3e2a2877b2e26997887ae6ce638ee6eb483664e6f3eeba37981291aa2d807",
-      "etag": "W/\"r03@2025.12.25\"",
-      "updated_at": "2025-12-25T10:50:01.889Z"
+      "size": 63887,
+      "sha256": "5bc075943ac42c6b5cd3ecbe9e95a5513d382f2af8bee196151e3737a2c873f1",
+      "etag": "W/\"r03@2025.12.27\"",
+      "updated_at": "2025-12-27T16:11:57.254Z"
     },
     {
       "id": "r04",
@@ -20,10 +20,10 @@
       "year": 2022,
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
-      "size": 48578,
-      "sha256": "cbe4a5f39d6084d93b36a029bacd0608ce256f7bad50dbe70f205166b57cb1a3",
-      "etag": "W/\"r04@2025.12.25\"",
-      "updated_at": "2025-12-25T10:50:01.889Z"
+      "size": 48658,
+      "sha256": "a9bf98d976d4c7d88bb449ee31829989e808e0eb6548ea4d447184974e55f066",
+      "etag": "W/\"r04@2025.12.27\"",
+      "updated_at": "2025-12-27T16:11:57.254Z"
     },
     {
       "id": "r05",
@@ -31,10 +31,10 @@
       "year": 2023,
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
-      "size": 51247,
-      "sha256": "d2401f975ecdb84e67e01886b771198321b304a8742af17c22422e5213c440f5",
-      "etag": "W/\"r05@2025.12.25\"",
-      "updated_at": "2025-12-25T10:50:01.889Z"
+      "size": 49060,
+      "sha256": "6966a6f97d89ffe1bcc7defa9f2a0c5651ea0022c71dbcd13a01747817523939",
+      "etag": "W/\"r05@2025.12.27\"",
+      "updated_at": "2025-12-27T16:11:57.254Z"
     },
     {
       "id": "r06",
@@ -42,10 +42,10 @@
       "year": 2024,
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
-      "size": 48188,
-      "sha256": "5294d8ed22534a94935ede76b82b51d4a17b96d18e16584c3991ef45911b6495",
-      "etag": "W/\"r06@2025.12.25\"",
-      "updated_at": "2025-12-25T10:50:01.889Z"
+      "size": 45893,
+      "sha256": "d81c6d15d4d710de746121084e141a779a102684cef84f43dd27321b54287b8f",
+      "etag": "W/\"r06@2025.12.27\"",
+      "updated_at": "2025-12-27T16:11:57.254Z"
     },
     {
       "id": "r07",
@@ -53,10 +53,10 @@
       "year": 2025,
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",
-      "size": 52066,
-      "sha256": "2108841fbcb482f0beb409a27f9dc1b5cd93690dc58c4fae340b17c0fc3be8d0",
-      "etag": "W/\"r07@2025.12.25\"",
-      "updated_at": "2025-12-25T10:50:01.889Z"
+      "size": 49588,
+      "sha256": "d9630c4f69b192cf5ea007b8288eb1438eceea7c8a72f6dfc779b7b6fcd3d56d",
+      "etag": "W/\"r07@2025.12.27\"",
+      "updated_at": "2025-12-27T16:11:57.254Z"
     }
   ]
 }
