@@ -1,62 +1,62 @@
 {
   "schema_version": "1.1.0",
   "content_version": "2026.03.15",
-  "generated_at": "2026-03-15T04:01:28.993Z",
+  "generated_at": "2026-03-15T08:50:42.397Z",
   "bundles": [
     {
       "id": "r03",
-      "title": "\u4ee4\u548c3\u5e74 \u516880\u554f",
+      "title": "令和3年 全80問",
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 64034,
-      "sha256": "51244f085eb5bcbd6a9ed6ec848546ec840a85ae1b94605cd5233d2266c897d2",
+      "size": 54279,
+      "sha256": "7e4edfe71ac344ebd3b085a763125fb5069d83b7c79c06e620d095435220b8ea",
       "etag": "W/\"r03@2026.03.15\"",
-      "updated_at": "2026-03-15T04:01:28.993Z"
+      "updated_at": "2026-03-15T08:50:42.397Z"
     },
     {
       "id": "r04",
-      "title": "\u4ee4\u548c4\u5e74 \u516880\u554f",
+      "title": "令和4年 全80問",
       "year": 2022,
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
-      "size": 48799,
-      "sha256": "e82eacf4da6c5e82fae1bb8a7df8fb8e5990ed3500d3e843fdbbd5a0edab17cd",
+      "size": 33025,
+      "sha256": "355ca50dcfa03c0e5ccbb85d97a9e7e5015a0585a6adb73324e612ec298aee2e",
       "etag": "W/\"r04@2026.03.15\"",
-      "updated_at": "2026-03-15T04:01:28.993Z"
+      "updated_at": "2026-03-15T08:50:42.397Z"
     },
     {
       "id": "r05",
-      "title": "\u4ee4\u548c5\u5e74 \u516880\u554f",
+      "title": "令和5年 全80問",
       "year": 2023,
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
-      "size": 49229,
-      "sha256": "4a486ce4accf8ce0cfffd67474d06e58b652b3c501fac0638fbb8c350def8bc2",
+      "size": 34570,
+      "sha256": "d875d650beb14da1f065c002b0d2e7785a4df2fb03e9258b781748ac33fbd109",
       "etag": "W/\"r05@2026.03.15\"",
-      "updated_at": "2026-03-15T04:01:28.993Z"
+      "updated_at": "2026-03-15T08:50:42.397Z"
     },
     {
       "id": "r06",
-      "title": "\u4ee4\u548c6\u5e74 \u516880\u554f",
+      "title": "令和6年 全80問",
       "year": 2024,
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
-      "size": 46035,
-      "sha256": "9dd55eed1f9dc15f438e9666c8347f741070900bc388e1e5ab193daefaed1b14",
+      "size": 32654,
+      "sha256": "b62c101c0d164664fbf0a2c2d2131b725237d41777290280417d76edca9cf99a",
       "etag": "W/\"r06@2026.03.15\"",
-      "updated_at": "2026-03-15T04:01:28.993Z"
+      "updated_at": "2026-03-15T08:50:42.397Z"
     },
     {
       "id": "r07",
-      "title": "\u4ee4\u548c7\u5e74 \u516880\u554f",
+      "title": "令和7年 全80問",
       "year": 2025,
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",
-      "size": 49739,
-      "sha256": "efd4f99f77897ff6c0ba6cab12b79231bc009f56294c244b7266163c87261a0f",
+      "size": 35482,
+      "sha256": "d4b737644630e390f83485b66504ebb1509b151692d98cb821c15c0a5f5b1340",
       "etag": "W/\"r07@2026.03.15\"",
-      "updated_at": "2026-03-15T04:01:28.993Z"
+      "updated_at": "2026-03-15T08:50:42.397Z"
     }
   ]
 }
