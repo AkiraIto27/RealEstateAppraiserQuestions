@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "node scripts/build.js",
-        "build:ai": "node scripts/build_with_ai.js"
+        "build:ai": "node scripts/build_with_ai.js",
+        "sync:ai-copy": "python3 scripts/sync_existing_ai_explanations.py"
     },
     "dependencies": {
         "@google/generative-ai": "^0.21.0",

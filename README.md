@@ -4,7 +4,7 @@
 オフライン対応のモバイルアプリから取得しやすい形式で GitHub Pages で公開するためのリポジトリです。
 
 さらに本リポジトリでは、e-Gov法令XML一括DLを元に作った **法令テキスト索引（laws_index）** を使い、
-**ローカルRAG（Chroma + Ollama）で根拠条文に基づくAI解説を生成**して `dist_with_ai/bundles` を作成できます。
+**ローカル/外部GPU対応RAG（Chroma + Ollama/OpenAI-compatible）で根拠条文に基づくAI解説を生成**して `dist_with_ai/bundles` を作成できます。
 
 ---
 
@@ -16,7 +16,7 @@
   - dist(JSONL)スキーマ
 - ビルドと公開（基本）
 - 法令データの取り込み（e-Gov → XML → TXT索引）
-- ローカルRAG（Chroma + Ollama）で解説生成
+- ローカル/外部GPU対応RAG（Chroma + Ollama/OpenAI-compatible）で解説生成
 - GitHub Actions（自動化フロー）
 - トラブルシュート
 - ライセンス/出典について
@@ -172,17 +172,24 @@ node scripts/laws_xml_to_txt.mjs
 # => laws_index/YYYY-MM-DD/**/*.txt が生成される
 ```
 
-## ローカルRAG（Chroma + Ollama）で解説生成
+## ローカル/外部GPU対応RAG（Chroma + Ollama/OpenAI-compatible）で解説生成
 
-ローカル環境だけで `dist/bundles/*.jsonl.gz` の `explanation` を埋める手順です。
-Embedding は `cl-nagoya/ruri-v3-310m`、生成 LLM は Ollama の `qwen2.5:7b-instruct` を前提にしています。
+`dist/bundles/*.jsonl.gz` を入力として、根拠条文に基づく `explanation` / `law_citations` を `dist_with_ai/bundles` に生成する手順です。
+Embedding は `cl-nagoya/ruri-v3-310m` を前提にし、生成 backend は以下の2系統に対応します。
+
+- ローカル: Ollama (`--backend ollama`)
+- 外部GPU推奨: OpenAI-compatible API (`--backend openai`) で vLLM を利用
+
+既定値は後方互換のため Ollama ですが、高品質優先で外部GPUを使う場合は **vLLM + Qwen3.5-27B** を第一候補にしてください。
+生成時は内部的に「正解番号・各選択肢の正誤・理由」を構造化JSONで生成し、その結果から最終的な prose を組み立てます。
+`answer` と整合しない、選択肢 1〜5 の説明が欠ける、生成後レビューで不整合が見つかる場合は自動再生成されます。
 
 ### 前提
 
 - macOS（Apple Silicon推奨、16GBメモリでも動作可）
 - Python 3.10+（venvを使用）
 - Node.js（XML→TXT索引の更新用）
-- Homebrew（Ollama導入に使う場合）
+- Homebrew（Ollama導入時のみ）
 
 ### 1) dist/bundles の存在確認（入力元）
 
@@ -214,7 +221,9 @@ pip install -r scripts/requirements-rag.txt
 > `sentencepiece` が足りないと言われた場合は  
 > `pip install sentencepiece` を追加で実行してください。
 
-### 4) Ollamaのインストールと起動
+### 4) 生成 backend の準備
+
+#### 4-a) ローカル Ollama を使う場合
 
 ```bash
 brew install ollama
@@ -225,6 +234,19 @@ brew services start ollama
 
 ```bash
 ollama pull qwen2.5:7b-instruct
+```
+
+#### 4-b) 外部GPU上の vLLM を使う場合（推奨）
+
+ローカルMacから外部GPU API を叩きます。`rag_local.py` 側は OpenAI-compatible API を利用するため、
+Runpod 等で vLLM を立て、`/v1/chat/completions` を公開してください。
+
+```bash
+export RAG_LLM_BACKEND=openai
+export RAG_LLM_BASE_URL=http://<vllm-host>:8000/v1
+export RAG_LLM_MODEL=Qwen/Qwen3.5-27B
+# 認証がある場合のみ
+export RAG_LLM_API_KEY=<token>
 ```
 
 ### 5) Chromaインデックス作成（RAGの土台）
@@ -239,13 +261,63 @@ python scripts/rag_local.py index --date 2024-09-01 --max-chars 1200 --batch-siz
 
 ### 6) 解説の試験生成（まずは少数）
 
+品質重視の目安:
+
+- `explain`（新規生成）: `qwen2.5:14b` を優先
+- `verify`（既存 explanation の厳密検証）: `qwen2.5:7b-instruct` を優先
+
+`verify` は回答整合性・citation 整合性・条番号/項番号・文言強度のズレ検出が主目的なので、
+ローカル Ollama では 14B より 7B のほうが実用的です。7B のほうが通常は速く、fail 候補の絞り込みに向いています。
+
+ローカル Ollama:
+
 ```bash
 python scripts/rag_local.py explain --bundle r07.jsonl.gz --limit 5 --log-per-question
 ```
 
-生成結果は `dist_with_ai/bundles` に書き込まれます（入力は `dist/bundles`）。
+外部GPU + vLLM（推奨）:
 
-### 7) 全量生成（dist_with_ai/bundles を上書き）
+```bash
+python scripts/rag_local.py explain \
+  --backend openai \
+  --bundle r07.jsonl.gz \
+  --limit 5 \
+  --timeout 300 \
+  --thinking-mode off \
+  --topic-filter-mode hybrid \
+  --max-regenerations 3 \
+  --log-per-question
+```
+
+生成結果は `dist_with_ai/bundles` に書き込まれます（入力は `dist/bundles`）。
+検証結果は `dist_with_ai/verification/*.verification.jsonl` に出力されます。
+
+### 7) 既存 explanation の厳密検証
+
+既に `dist_with_ai/bundles` に explanation が入っている場合、まずは全件を再生成せずに `verify` を回し、
+NG になった ID だけを再生成する運用を推奨します。
+
+まずは少数確認:
+
+```bash
+python scripts/rag_local.py verify \
+  --bundles dist_with_ai/bundles \
+  --bundle r07.jsonl.gz \
+  --limit 10 \
+  --backend ollama \
+  --llm-model qwen2.5:7b-instruct \
+  --timeout 300 \
+  --thinking-mode off \
+  --topic-filter-mode hybrid \
+  --log-per-question \
+  --verification-report-dir dist_with_ai/verification \
+  --failed-ids-file dist_with_ai/verification/failed_ids.txt
+```
+
+verify 結果は `dist_with_ai/verification/*.verify_existing.jsonl` に出力され、
+fail した ID は `dist_with_ai/verification/failed_ids.txt` に保存されます。
+
+### 8) 全量生成（dist_with_ai/bundles を上書き）
 
 ```bash
 python scripts/rag_local.py explain
@@ -253,12 +325,43 @@ python scripts/rag_local.py explain
 
 `explanation` が空の問題だけを埋めます。上書きしたい場合は `--force` を付けてください。
 
-### 8) タイムアウト対策
+### 9) backend 切替・タイムアウト・リトライ
+
+CLI 引数で backend / model / base_url / api_key を直接指定することもできます。
+
+```bash
+python scripts/rag_local.py explain \
+  --backend openai \
+  --base-url http://<vllm-host>:8000/v1 \
+  --api-key <token> \
+  --llm-model Qwen/Qwen3.5-27B
+```
 
 Ollamaが遅い場合はタイムアウトを延ばします。
 
 ```bash
 python scripts/rag_local.py explain --timeout 300
+```
+
+`qwen2.5:14b` で `explain` や `verify` の LLM review を行う場合、`--timeout 300` でも足りないことがあります。
+ローカル Ollama では、必要に応じて `--timeout 600` 以上を検討してください。
+
+OpenAI-compatible backend で JSON 出力や一時的な失敗がある場合は、リトライを増やせます。
+
+```bash
+python scripts/rag_local.py explain --backend openai --timeout 300 --retries 4 --retry-backoff 3
+```
+
+生成内容の整合性チェックまで含めて厳しめに回したい場合:
+
+```bash
+python scripts/rag_local.py explain --backend openai --max-regenerations 3
+```
+
+速度優先で、生成後の LLM レビューを省略したい場合:
+
+```bash
+python scripts/rag_local.py explain --backend openai --no-llm-review
 ```
 
 さらに軽くする場合:
@@ -267,7 +370,9 @@ python scripts/rag_local.py explain --timeout 300
 python scripts/rag_local.py explain --timeout 300 --max-results 4 --max-context-chars 8000
 ```
 
-### 9) 失敗したIDだけ再実行
+Qwen3.5 系を vLLM で使う場合、長い思考出力で JSON が不安定になるなら `--thinking-mode off` を推奨します。
+
+### 10) 失敗したIDだけ再実行
 
 JSONエラー等が出たIDだけを再実行できます。`explain` 実行時は、デフォルトで `rag_errors.txt` にエラーIDが自動追記されます（不要なら `--no-error-log`）。
 
@@ -295,12 +400,33 @@ python scripts/rag_local.py explain --ids-file rag_errors.txt --force
 python scripts/rag_local.py explain --only-ids r07-012,r07-022,r07-048 --force
 ```
 
+`verify` で fail した ID だけを再生成する場合:
+
+```bash
+python scripts/rag_local.py explain \
+  --ids-file dist_with_ai/verification/failed_ids.txt \
+  --force \
+  --backend ollama \
+  --llm-model qwen2.5:14b \
+  --timeout 600 \
+  --thinking-mode off \
+  --topic-filter-mode hybrid \
+  --max-regenerations 3 \
+  --log-per-question
+```
+
 ログをクリアしたい場合は `> rag_errors.txt` で空にしてください。
 
-### 10) 対話（RAGチャット）で確認したい場合
+### 11) 対話（RAGチャット）で確認したい場合
 
 ```bash
 python scripts/rag_local.py chat --topic 土地基本法
+```
+
+外部GPU backend の確認例:
+
+```bash
+python scripts/rag_local.py chat --backend openai --topic 土地基本法 --thinking-mode off
 ```
 
 ### 11) 作業を終える（Python/venv/Ollamaの終了）
@@ -317,6 +443,8 @@ deactivate
 
 - ローカルRAG本体: `scripts/rag_local.py`
 - 依存パッケージ: `scripts/requirements-rag.txt`
+- 主要LLM環境変数: `RAG_LLM_BACKEND`, `RAG_LLM_BASE_URL`, `RAG_LLM_MODEL`, `RAG_LLM_API_KEY`
+- 検証レポート出力先: `dist_with_ai/verification/*.verification.jsonl`
 
 ## GitHub Actions（自動化フロー）
 
