@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
-  "content_version": "2026.01.03",
-  "generated_at": "2026-01-03T16:20:16.295Z",
+  "content_version": "2026.03.15",
+  "generated_at": "2026-03-15T04:01:28.993Z",
   "bundles": [
     {
       "id": "r03",
@@ -11,8 +11,8 @@
       "url": "/bundles/r03.jsonl.gz",
       "size": 64034,
       "sha256": "51244f085eb5bcbd6a9ed6ec848546ec840a85ae1b94605cd5233d2266c897d2",
-      "etag": "W/\"r03@2026.01.03\"",
-      "updated_at": "2026-01-03T16:20:16.295Z"
+      "etag": "W/\"r03@2026.03.15\"",
+      "updated_at": "2026-03-15T04:01:28.993Z"
     },
     {
       "id": "r04",
@@ -22,8 +22,8 @@
       "url": "/bundles/r04.jsonl.gz",
       "size": 48799,
       "sha256": "e82eacf4da6c5e82fae1bb8a7df8fb8e5990ed3500d3e843fdbbd5a0edab17cd",
-      "etag": "W/\"r04@2026.01.03\"",
-      "updated_at": "2026-01-03T16:20:16.295Z"
+      "etag": "W/\"r04@2026.03.15\"",
+      "updated_at": "2026-03-15T04:01:28.993Z"
     },
     {
       "id": "r05",
@@ -33,8 +33,8 @@
       "url": "/bundles/r05.jsonl.gz",
       "size": 49229,
       "sha256": "4a486ce4accf8ce0cfffd67474d06e58b652b3c501fac0638fbb8c350def8bc2",
-      "etag": "W/\"r05@2026.01.03\"",
-      "updated_at": "2026-01-03T16:20:16.295Z"
+      "etag": "W/\"r05@2026.03.15\"",
+      "updated_at": "2026-03-15T04:01:28.993Z"
     },
     {
       "id": "r06",
@@ -44,8 +44,8 @@
       "url": "/bundles/r06.jsonl.gz",
       "size": 46035,
       "sha256": "9dd55eed1f9dc15f438e9666c8347f741070900bc388e1e5ab193daefaed1b14",
-      "etag": "W/\"r06@2026.01.03\"",
-      "updated_at": "2026-01-03T16:20:16.295Z"
+      "etag": "W/\"r06@2026.03.15\"",
+      "updated_at": "2026-03-15T04:01:28.993Z"
     },
     {
       "id": "r07",
@@ -55,8 +55,8 @@
       "url": "/bundles/r07.jsonl.gz",
       "size": 49739,
       "sha256": "efd4f99f77897ff6c0ba6cab12b79231bc009f56294c244b7266163c87261a0f",
-      "etag": "W/\"r07@2026.01.03\"",
-      "updated_at": "2026-01-03T16:20:16.295Z"
+      "etag": "W/\"r07@2026.03.15\"",
+      "updated_at": "2026-03-15T04:01:28.993Z"
     }
   ]
 }
