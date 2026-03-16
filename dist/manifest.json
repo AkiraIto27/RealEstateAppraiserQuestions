@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
   "content_version": "2026.03.16",
-  "generated_at": "2026-03-16T00:34:50.745Z",
+  "generated_at": "2026-03-16T00:41:13.586Z",
   "bundles": [
     {
       "id": "r03",
@@ -9,8 +9,8 @@
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 52725,
-      "sha256": "6644750d31972d0c9f6d456753907bd13ca9e3c5dfd0646bd402d032216d8e25",
+      "size": 32423,
+      "sha256": "3eac78493a97a46c52575495fbfdfa392d797a0ca2ec383454ae55e7ac5a9486",
       "etag": "W/\"r03@2026.03.16\"",
       "updated_at": "2025-12-22T13:50:25.671Z"
     },
