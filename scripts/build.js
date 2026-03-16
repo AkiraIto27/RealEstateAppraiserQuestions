@@ -9,6 +9,7 @@ import { pipeline } from 'node:stream/promises';
 const DATA_DIR = './data';
 const DIST_DIR = './dist';
 const BUNDLES_DIR = path.join(DIST_DIR, 'bundles');
+const PAGE_MARKER_RE = /^-\s*\d+\s*-$/m;
 
 const contentVersion = process.env.CONTENT_VERSION || new Date().toISOString().slice(0, 16).replace('T', '.').replace(/-/g, '.').replace(':', '');
 const generatedAt = new Date().toISOString();
@@ -142,7 +143,7 @@ function normalizeRow(r, idx, yy, filename) {
   const year = Number(r.year || guessGregorian(r.era, r.era_year));
 
   const choices = [1, 2, 3, 4, 5].map(k => {
-    const txt = (r[`choice${k}`] ?? '').toString().trim();
+    const txt = cleanQuestionText((r[`choice${k}`] ?? '').toString());
     return txt ? { key: k, text: txt } : null;
   }).filter(Boolean);
 
@@ -170,7 +171,7 @@ function normalizeRow(r, idx, yy, filename) {
     subject: r.subject?.trim() || subjectHint,
     topic: r.topic || '',
     question_no: Number(r.question_no || 0),
-    statement: (r.statement || '').toString(),
+    statement: cleanQuestionText((r.statement || '').toString()),
     choices,
     answer: Number(r.answer),
     explanation: r.explanation || '',
@@ -200,6 +201,15 @@ function guessGregorian(era, eraYear) {
   if ((era || '').includes('令和') && eraYear) return 2018 + Number(eraYear);
   // 平成等が必要なら追記
   return undefined;
+}
+
+function cleanQuestionText(text) {
+  return text
+    .split(/\r?\n/)
+    .filter(line => !PAGE_MARKER_RE.test(line.trim()))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 async function gzipWriteString(s, outPath) {

@@ -16,6 +16,7 @@ QUESTION_RE = re.compile(r"〔問題\s*([0-9０-９]+)〕\s*(.*)")
 CHOICE_RE = re.compile(r"^(?:[⑴⑵⑶⑷⑸]|\(([1-5])\))\s*(.*)")
 TOP_LEVEL_IROHA_RE = re.compile(r"^[イロハニホ][ 　]")
 FULLWIDTH_DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
+PAGE_MARKER_RE = re.compile(r"^-\s*\d+\s*-$")
 
 
 def normalize_number(text: str) -> int:
@@ -75,7 +76,7 @@ def split_question_blocks(text: str) -> list[tuple[int, str]]:
 
 def normalize_lines(block_text: str) -> list[str]:
     lines = [line.rstrip() for line in block_text.splitlines()]
-    return [line for line in lines if line.strip()]
+    return [line for line in lines if line.strip() and not PAGE_MARKER_RE.fullmatch(line.strip())]
 
 
 def infer_topic(first_line: str) -> str | None:
