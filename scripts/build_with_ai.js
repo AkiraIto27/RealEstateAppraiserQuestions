@@ -28,7 +28,7 @@ const OUTPUT_DIR = './dist_with_ai';
 const OUTPUT_BUNDLES_DIR = path.join(OUTPUT_DIR, 'bundles');
 const LAWS_DIR = './laws';
 
-const contentVersion = process.env.CONTENT_VERSION || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+const contentVersion = process.env.CONTENT_VERSION || new Date().toISOString().slice(0, 16).replace('T', '.').replace(/-/g, '.').replace(':', '');
 const generatedAt = new Date().toISOString();
 
 // Gemini API設定

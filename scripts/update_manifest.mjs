@@ -24,7 +24,7 @@ const BUNDLES_DIR = path.join(DIST_DIR, 'bundles');
 const MANIFEST_FILE = path.join(DIST_DIR, 'manifest.json');
 
 // バージョン管理（簡易的）
-const contentVersion = process.env.CONTENT_VERSION || new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+const contentVersion = process.env.CONTENT_VERSION || new Date().toISOString().slice(0, 16).replace('T', '.').replace(/-/g, '.').replace(':', '');
 const generatedAt = new Date().toISOString();
 
 async function getFileHashAndSize(filepath) {
