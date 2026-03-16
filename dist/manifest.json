@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
   "content_version": "2026.03.16",
-  "generated_at": "2026-03-16T00:28:34.502Z",
+  "generated_at": "2026-03-16T00:34:50.745Z",
   "bundles": [
     {
       "id": "r03",
@@ -9,8 +9,8 @@
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 52709,
-      "sha256": "ab129614ff8a6b5ef39245a65d3e0ac93168b1fefa1a73b812bd043643c38083",
+      "size": 52725,
+      "sha256": "6644750d31972d0c9f6d456753907bd13ca9e3c5dfd0646bd402d032216d8e25",
       "etag": "W/\"r03@2026.03.16\"",
       "updated_at": "2025-12-22T13:50:25.671Z"
     },
@@ -20,8 +20,8 @@
       "year": 2022,
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
-      "size": 31760,
-      "sha256": "98a1b60d58a8ff203adb062ac13c226bb2aba2705cc37b079538cb525de910fb",
+      "size": 31749,
+      "sha256": "069197cc9f9f42455db435beff80dc5be06209caf554081173de64a193a3d328",
       "etag": "W/\"r04@2026.03.16\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     },
@@ -32,7 +32,7 @@
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
       "size": 33280,
-      "sha256": "89decd126d75004cae33cd2094e6c2ae805664ecfd73c4aac80783e50325d322",
+      "sha256": "0095bc70263ef490e16e978fa07e7f70809f015a9a6d89f819469fadd0fa572e",
       "etag": "W/\"r05@2026.03.16\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     },
@@ -43,7 +43,7 @@
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
       "size": 31372,
-      "sha256": "44bb9c79009e25d1dbb2a61af24f0d5f82d198af8a37b46da29e83a29c1ac58d",
+      "sha256": "373523e618e600ef0cd601d81d0b43012d6b5e98059de38c2c966842591f9564",
       "etag": "W/\"r06@2026.03.16\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     },
@@ -54,7 +54,7 @@
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",
       "size": 34103,
-      "sha256": "fff31f1d8a245300106f5653efc22834ecf36001f5af49cf5500da997b32f2c8",
+      "sha256": "95d2013b306859c86d46b15da0cca5968d8c661140b9e86fb73fad5be0adcec3",
       "etag": "W/\"r07@2026.03.16\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     }
