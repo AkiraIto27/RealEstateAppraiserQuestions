@@ -58,7 +58,7 @@ for (const [yy, list] of grouped.entries()) {
     const csv = fs.readFileSync(p, 'utf8');
     let rows;
     try {
-      rows = parse(csv, { columns: true, skip_empty_lines: true, relax_quotes: true });
+      rows = parse(csv, { bom: true, columns: true, skip_empty_lines: true, relax_quotes: true });
     } catch (e) {
       console.error(`[build] CSV parse error in ${f}:`, e.message);
       // 解析失敗時は詳細を出力して終了
@@ -88,6 +88,7 @@ for (const [yy, list] of grouped.entries()) {
 
   // 並び替え（任意）
   items.sort((a, b) => (a.subject || '').localeCompare(b.subject || '', 'ja') || a.question_no - b.question_no);
+  assertUniqueIds(items, yy);
   console.log(`[build] sorted items for ${yy}: ${items.length}`);
 
   // JSONL化
@@ -210,6 +211,22 @@ function cleanQuestionText(text) {
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+function assertUniqueIds(items, yy) {
+  const seen = new Map();
+  for (const item of items) {
+    if (!item.id) {
+      throw new Error(`${yy}: empty id found`);
+    }
+    seen.set(item.id, (seen.get(item.id) || 0) + 1);
+  }
+  const duplicates = Array.from(seen.entries())
+    .filter(([, count]) => count > 1)
+    .map(([id]) => id);
+  if (duplicates.length) {
+    throw new Error(`${yy}: duplicate ids found: ${duplicates.slice(0, 10).join(', ')}`);
+  }
 }
 
 async function gzipWriteString(s, outPath) {
