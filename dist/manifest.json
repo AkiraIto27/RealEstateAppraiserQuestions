@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
-  "content_version": "2026.05.05.1800",
-  "generated_at": "2026-05-05T09:01:10.944Z",
+  "content_version": "2026.05.05.0905",
+  "generated_at": "2026-05-05T09:05:23.828Z",
   "bundles": [
     {
       "id": "r03",
@@ -10,8 +10,8 @@
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
       "size": 32424,
-      "sha256": "d0e226e16bc624e68c15e44e42338c4a9e662a96f9afb2f6a0ff5db5bb7bcb0c",
-      "etag": "W/\"r03@2026.05.05.1800\"",
+      "sha256": "ec667d396b9dfd268bd56def07bc6fff0e0952d5f9e57eb50262fc3ebd7f8f62",
+      "etag": "W/\"r03@2026.05.05.0905\"",
       "updated_at": "2025-12-22T13:50:25.671Z"
     },
     {
@@ -21,8 +21,8 @@
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
       "size": 31751,
-      "sha256": "dc7e3ef4c5428a9a1dfb0e895b04f5f550534a8b428db54549e2ea28b0cbe5c3",
-      "etag": "W/\"r04@2026.05.05.1800\"",
+      "sha256": "d148f41a77b9e5b8892e4f398bea5835e9fc58593562b4cf366720051275026f",
+      "etag": "W/\"r04@2026.05.05.0905\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
@@ -32,8 +32,8 @@
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
       "size": 33280,
-      "sha256": "6d922d1de7ffd6806dec9573cc3f949503f983ce77e2ddd23eb618edba11e0f5",
-      "etag": "W/\"r05@2026.05.05.1800\"",
+      "sha256": "2d5279eb0d7bfd33888f6598b44e21c39663244f9a8d1bb2edafa2b909f80c8c",
+      "etag": "W/\"r05@2026.05.05.0905\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
@@ -43,8 +43,8 @@
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
       "size": 31142,
-      "sha256": "fda8dfc01789bc832680d70b45be41766d0ded7d88db405e493ff57f09ed4c57",
-      "etag": "W/\"r06@2026.05.05.1800\"",
+      "sha256": "38adc99c6dd6f6b3868355e8a07bf99427e7296b19c9109a79a65c337376aa7a",
+      "etag": "W/\"r06@2026.05.05.0905\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
@@ -54,8 +54,8 @@
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",
       "size": 33861,
-      "sha256": "70a9c50aec960523b1784781e547073c00ae1898534b533da49ac8d64c347987",
-      "etag": "W/\"r07@2026.05.05.1800\"",
+      "sha256": "4e28f087b6aef9c5ded52f8a6c9806d521b8d7ef6f0adcfcfe0aa551b1643dbc",
+      "etag": "W/\"r07@2026.05.05.0905\"",
       "updated_at": "2025-11-08T00:00:00.000Z"
     }
   ]
