@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_FILES = sorted((ROOT / "data").glob("r0[3-7]_*.csv"))
 DIST_BUNDLES_DIR = ROOT / "dist" / "bundles"
 DIST_WITH_AI_BUNDLES_DIR = ROOT / "dist_with_ai" / "bundles"
+LEGACY_AI_BUNDLES_DIR = ROOT / "使えなかったAI解説付きのもの"
+TEXT_FIELDS = ("statement", "choice1", "choice2", "choice3", "choice4", "choice5")
 TOP_LEVEL_MARKER_RE = re.compile(r"^[イロハニホ](?:[\s　]|$)")
 BULLET_RE = re.compile(r"^[・●○◯■□◆◇]")
 CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
@@ -77,14 +79,22 @@ def normalize_statement(text: str) -> str:
     return "\\n".join(normalized_paragraphs)
 
 
+def normalize_inline_text(text: str) -> str:
+    cleaned = strip_control_chars(text).replace("\r\n", "\n").replace("\r", "\n")
+    lines = [line.strip() for line in cleaned.split("\n") if line.strip()]
+    if not lines:
+        return ""
+    return "".join(lines)
+
+
 def make_key(year: str, subject: str, question_no: str | int) -> str:
     return f"{year}::{subject.strip()}::{question_no}"
 
 
-def rewrite_csvs() -> dict[str, str]:
-    statement_by_key: dict[str, str] = {}
+def rewrite_csvs() -> dict[str, dict[str, str]]:
+    text_by_key: dict[str, dict[str, str]] = {}
     changed_files = 0
-    changed_rows = 0
+    changed_fields = 0
 
     for csv_path in DATA_FILES:
         with csv_path.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -94,13 +104,15 @@ def rewrite_csvs() -> dict[str, str]:
 
         file_changed = False
         for row in rows:
-            normalized = normalize_statement(row.get("statement", ""))
-            if normalized != row.get("statement", ""):
-                row["statement"] = normalized
-                changed_rows += 1
-                file_changed = True
+            for field in TEXT_FIELDS:
+                original = row.get(field, "")
+                normalized = normalize_statement(original) if field == "statement" else normalize_inline_text(original)
+                if normalized != original:
+                    row[field] = normalized
+                    changed_fields += 1
+                    file_changed = True
             key = make_key(row.get("year", ""), row.get("subject", ""), row.get("question_no", ""))
-            statement_by_key[key] = row["statement"]
+            text_by_key[key] = {field: row.get(field, "") for field in TEXT_FIELDS}
 
         if file_changed:
             with csv_path.open("w", encoding="utf-8-sig", newline="") as fh:
@@ -109,11 +121,11 @@ def rewrite_csvs() -> dict[str, str]:
                 writer.writerows(rows)
             changed_files += 1
 
-    print(f"[normalize_statement_breaks] updated CSV files: {changed_files}, rows: {changed_rows}")
-    return statement_by_key
+    print(f"[normalize_statement_breaks] updated CSV files: {changed_files}, fields: {changed_fields}")
+    return text_by_key
 
 
-def update_dist_with_ai_bundles(statement_by_key: dict[str, str]) -> None:
+def update_dist_with_ai_bundles(text_by_key: dict[str, dict[str, str]]) -> None:
     changed_bundle_ids: list[str] = []
     now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -124,10 +136,21 @@ def update_dist_with_ai_bundles(statement_by_key: dict[str, str]) -> None:
         changed = False
         for record in records:
             key = make_key(record.get("year", ""), record.get("subject", ""), record.get("question_no", ""))
-            new_statement = statement_by_key.get(key)
-            if new_statement and new_statement != record.get("statement", ""):
-                record["statement"] = new_statement
+            new_text = text_by_key.get(key)
+            if not new_text:
+                continue
+
+            if new_text["statement"] != record.get("statement", ""):
+                record["statement"] = new_text["statement"]
                 changed = True
+
+            choices = record.get("choices", [])
+            if len(choices) == 5:
+                for index, choice in enumerate(choices, start=1):
+                    field = f"choice{index}"
+                    if new_text[field] != choice.get("text", ""):
+                        choice["text"] = new_text[field]
+                        changed = True
 
         if not changed:
             continue
@@ -157,9 +180,75 @@ def update_dist_with_ai_bundles(statement_by_key: dict[str, str]) -> None:
     print(f"[normalize_statement_breaks] updated dist_with_ai bundles: {len(changed_bundle_ids)}")
 
 
+def normalize_jsonl_record(record: dict) -> bool:
+    changed = False
+
+    statement = record.get("statement")
+    if isinstance(statement, str):
+        normalized = normalize_statement(statement)
+        if normalized != statement:
+            record["statement"] = normalized
+            changed = True
+
+    for field in TEXT_FIELDS[1:]:
+        value = record.get(field)
+        if not isinstance(value, str):
+            continue
+        normalized = normalize_inline_text(value)
+        if normalized != value:
+            record[field] = normalized
+            changed = True
+
+    choices = record.get("choices")
+    if isinstance(choices, list):
+        for choice in choices:
+            if not isinstance(choice, dict):
+                continue
+            text = choice.get("text")
+            if not isinstance(text, str):
+                continue
+            normalized = normalize_inline_text(text)
+            if normalized != text:
+                choice["text"] = normalized
+                changed = True
+
+    return changed
+
+
+def normalize_legacy_ai_bundles() -> None:
+    if not LEGACY_AI_BUNDLES_DIR.exists():
+        return
+
+    changed_bundles = 0
+    changed_records = 0
+    for bundle_path in sorted(LEGACY_AI_BUNDLES_DIR.glob("r0[3-7].jsonl.gz")):
+        with gzip.open(bundle_path, "rt", encoding="utf-8") as fh:
+            records = [json.loads(line) for line in fh if line.strip()]
+
+        bundle_changed = False
+        for record in records:
+            if normalize_jsonl_record(record):
+                bundle_changed = True
+                changed_records += 1
+
+        if not bundle_changed:
+            continue
+
+        payload = "\n".join(json.dumps(record, ensure_ascii=False) for record in records)
+        with gzip.open(bundle_path, "wt", encoding="utf-8") as fh:
+            fh.write(payload)
+        changed_bundles += 1
+
+    print(
+        "[normalize_statement_breaks] updated legacy AI bundles: "
+        f"{changed_bundles}, records: {changed_records}"
+    )
+
+
 def main() -> None:
-    statement_by_key = rewrite_csvs()
-    update_dist_with_ai_bundles(statement_by_key)
+    text_by_key = rewrite_csvs()
+    update_dist_with_ai_bundles(text_by_key)
+    normalize_legacy_ai_bundles()
 
 
 if __name__ == "__main__":
