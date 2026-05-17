@@ -40,6 +40,7 @@ RealEstateAppraiserQuestions/
 │  └─ YYYY-MM-DD/              # laws_xml_to_txt により生成されるTXT索引（RAG入力用）
 ├─ scripts/
 │  ├─ build.js                 # CSV → dist生成
+│  ├─ check_exam_consistency.mjs # exam分類の検査・修正
 │  ├─ fetch_laws_from_bulk.py  # e-Gov一括DLから laws/YYYY-MM-DD/ へ展開（想定）
 │  ├─ laws_xml_to_txt.mjs      # laws/YYYY-MM-DD/.xml → laws_index/YYYY-MM-DD/*.txt
 │  ├─ rag_local.py             # ローカルRAGで解説生成
@@ -69,6 +70,30 @@ explanation,law_citations,difficulty,tags,source_page,updated_at
 - tags はカンマ区切り（例：`頻出,改正2025`）
 - 文章にカンマ/改行があるセルは引用符で囲む（Excel/スプレッドシートでOK）
 
+### exam分類
+
+`exam` は消費側アプリの `QuestionExamPattern`
+（`RealEstateAppraiser/composeApp/src/commonMain/kotlin/com/real/estate/appraiser/core/model/Question.kt`）
+に対応する出題形式コードです。
+問題作成・取り込み・CSV修正・バンドル再生成の前後では、必ず `npm run exam:check` を実行してください。
+不整合が出た場合は `npm run exam:fix` で `data/*.csv` と既存バンドルの `exam` を修正してから再ビルドします。
+
+```bash
+npm run exam:check
+npm run exam:fix
+npm run build
+npm run sync:ai-copy
+node scripts/update_manifest.mjs --dist dist_with_ai
+npm run exam:check
+```
+
+分類の仕様:
+
+- `combo_iroha`: `イ/ロ/ハ/ニ/ホ` の記述群から、`イとロ`、`イとロとハ`、`イのみ` などの純粋な組合せを選ぶ問題。
+- `single_select`: 選択肢が文章で、正しいもの・誤っているものなどを1つ選ぶ問題。
+- `fill_blank`: 空欄補充・穴埋め問題。空欄ラベルに `イ/ロ/ハ` を使っていても、空欄に語句を入れる形式ならこちら。
+- `calc_numeric`: 前提条件・数値に基づいて計算し、円・％・㎡などの数値結果を選ぶ問題。
+
 ---
 
 ### dist(JSONL) スキーマ（1行=1問）
@@ -83,7 +108,7 @@ explanation,law_citations,difficulty,tags,source_page,updated_at
   "year":2023,
   "era":"令和",
   "era_year":5,
-  "exam":"不動産鑑定士 短答",
+  "exam":"combo_iroha",
   "subject":"不動産に関する行政法規",
   "topic":"土地基本法",
   "question_no":1,
