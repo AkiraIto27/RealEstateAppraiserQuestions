@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
-  "content_version": "2026.05.17.0234",
-  "generated_at": "2026-05-17T02:34:17.619Z",
+  "content_version": "2026.05.17.0411",
+  "generated_at": "2026-05-17T04:11:21.184Z",
   "bundles": [
     {
       "id": "r03",
@@ -9,10 +9,10 @@
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 32165,
-      "sha256": "8e1f3245169f49e3c500ecb7ac09e848c58f557dd0c113e8f28cef92208f7b03",
-      "etag": "W/\"r03@2026.05.17.0234\"",
-      "updated_at": "2026-05-17T02:34:17.619Z"
+      "size": 32167,
+      "sha256": "516aeefa36a1638ca20c400f5e98ef2427804de7ed5d7549908c8e2c6fbb3380",
+      "etag": "W/\"r03@2026.05.17.0411\"",
+      "updated_at": "2026-05-17T04:11:21.184Z"
     },
     {
       "id": "r04",
@@ -22,8 +22,8 @@
       "url": "/bundles/r04.jsonl.gz",
       "size": 31455,
       "sha256": "eeec6c124b69780624cabe01f01fdecde9ebc16e21534eab2b9af4ef73e4e02a",
-      "etag": "W/\"r04@2026.05.17.0234\"",
-      "updated_at": "2026-05-17T02:34:17.619Z"
+      "etag": "W/\"r04@2026.05.17.0411\"",
+      "updated_at": "2026-05-17T04:11:21.184Z"
     },
     {
       "id": "r05",
@@ -33,8 +33,8 @@
       "url": "/bundles/r05.jsonl.gz",
       "size": 33079,
       "sha256": "ecb3c249a2fc7666abdbbb3730f49425509aff2ef66abc5de3b2d235767dd385",
-      "etag": "W/\"r05@2026.05.17.0234\"",
-      "updated_at": "2026-05-17T02:34:17.619Z"
+      "etag": "W/\"r05@2026.05.17.0411\"",
+      "updated_at": "2026-05-17T04:11:21.184Z"
     },
     {
       "id": "r06",
@@ -44,8 +44,8 @@
       "url": "/bundles/r06.jsonl.gz",
       "size": 30916,
       "sha256": "fa21deb07c443e7e7b776eeca63e7c1073a2081f6ab1f988b58a10ba89cc7eab",
-      "etag": "W/\"r06@2026.05.17.0234\"",
-      "updated_at": "2026-05-17T02:34:17.619Z"
+      "etag": "W/\"r06@2026.05.17.0411\"",
+      "updated_at": "2026-05-17T04:11:21.184Z"
     },
     {
       "id": "r07",
@@ -55,8 +55,8 @@
       "url": "/bundles/r07.jsonl.gz",
       "size": 33635,
       "sha256": "daf133813be3df994f17d0e6878de0c277b64ad00af9d5dd8a1d5a7ff53dfd50",
-      "etag": "W/\"r07@2026.05.17.0234\"",
-      "updated_at": "2026-05-17T02:34:17.619Z"
+      "etag": "W/\"r07@2026.05.17.0411\"",
+      "updated_at": "2026-05-17T04:11:21.184Z"
     }
   ]
 }
