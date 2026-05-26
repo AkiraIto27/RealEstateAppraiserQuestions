@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
-  "content_version": "2026.05.25.0221",
-  "generated_at": "2026-05-25T02:21:35.350Z",
+  "content_version": "2026.05.26.1444",
+  "generated_at": "2026-05-26T14:44:59.919Z",
   "bundles": [
     {
       "id": "r03",
@@ -9,10 +9,10 @@
       "year": 2021,
       "items": 80,
       "url": "/bundles/r03.jsonl.gz",
-      "size": 31814,
-      "sha256": "5c573c7bc60e643dd7f57478c2ad051c7e8773d0e3622ea3eeb6b18fd9b12234",
-      "etag": "W/\"r03@2026.05.25.0221\"",
-      "updated_at": "2026-05-25T02:21:35.350Z"
+      "size": 31819,
+      "sha256": "5a43849735ed7987ef6d0703fab164b162fc34b096ee0bd75741d6dd6b48a878",
+      "etag": "W/\"r03@2026.05.26.1444\"",
+      "updated_at": "2025-12-22T13:50:25.671Z"
     },
     {
       "id": "r04",
@@ -20,10 +20,10 @@
       "year": 2022,
       "items": 80,
       "url": "/bundles/r04.jsonl.gz",
-      "size": 31158,
-      "sha256": "81db97945f576102af8600396db965e94e8433755bdd933a32ff22fd209ad9dc",
-      "etag": "W/\"r04@2026.05.25.0221\"",
-      "updated_at": "2026-05-25T02:21:35.350Z"
+      "size": 31131,
+      "sha256": "4b62184913318f52ae37ee1d05125ff8fda0e783d7dcdbf42dfb130095a78021",
+      "etag": "W/\"r04@2026.05.26.1444\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
       "id": "r05",
@@ -31,10 +31,10 @@
       "year": 2023,
       "items": 80,
       "url": "/bundles/r05.jsonl.gz",
-      "size": 32584,
-      "sha256": "a6c12281a13c442672b46adf957ac06a7463cc8bef32baed15cc49bfe9c9d866",
-      "etag": "W/\"r05@2026.05.25.0221\"",
-      "updated_at": "2026-05-25T02:21:35.350Z"
+      "size": 32581,
+      "sha256": "163a51cbe5d315c5e42148ad22d9549ff0aa210251f19cf706d0af501cfcb982",
+      "etag": "W/\"r05@2026.05.26.1444\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
       "id": "r06",
@@ -42,10 +42,10 @@
       "year": 2024,
       "items": 80,
       "url": "/bundles/r06.jsonl.gz",
-      "size": 30377,
-      "sha256": "24984b9434ab3703b5986d649574263cf49b7e4a316a28e05762d390e28f6a40",
-      "etag": "W/\"r06@2026.05.25.0221\"",
-      "updated_at": "2026-05-25T02:21:35.350Z"
+      "size": 30338,
+      "sha256": "6bb6c9f3320aae198c1b54a86b5eb2c29c6f3bae7895f3dc2ad16acf0ef7e495",
+      "etag": "W/\"r06@2026.05.26.1444\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
       "id": "r07",
@@ -53,10 +53,10 @@
       "year": 2025,
       "items": 80,
       "url": "/bundles/r07.jsonl.gz",
-      "size": 32972,
-      "sha256": "e7624090bfd13b75dcfea8f66f10fca4120e88a4ebf4bff4dcaf8602b2cb83f4",
-      "etag": "W/\"r07@2026.05.25.0221\"",
-      "updated_at": "2026-05-25T02:21:35.350Z"
+      "size": 32957,
+      "sha256": "6836090fbac299491dc7aa776e5de32ac5aaed87685cea929a4417e4e92a8998",
+      "etag": "W/\"r07@2026.05.26.1444\"",
+      "updated_at": "2025-11-08T00:00:00.000Z"
     },
     {
       "id": "r08",
@@ -64,10 +64,10 @@
       "year": 2026,
       "items": 80,
       "url": "/bundles/r08.jsonl.gz",
-      "size": 33999,
-      "sha256": "7d84bc3afc39d1e8f6139f9af389338e92adcd8ae71b0a8eaec5c1ba2501030d",
-      "etag": "W/\"r08@2026.05.25.0221\"",
-      "updated_at": "2026-05-25T02:21:35.350Z"
+      "size": 34024,
+      "sha256": "7fe28de12fc36e28378372d796d19e0ee4523b9e65070812cbdee93daaff9276",
+      "etag": "W/\"r08@2026.05.26.1444\"",
+      "updated_at": "2026-05-23T00:00:00.000Z"
     }
   ]
 }

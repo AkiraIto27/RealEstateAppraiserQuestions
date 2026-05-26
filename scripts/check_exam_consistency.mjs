@@ -166,6 +166,8 @@ function processBundleDir(dir, fix) {
 function inferExamFromCsvRow(row) {
   const choices = [1, 2, 3, 4, 5].map((key) => row[`choice${key}`] ?? '');
   return inferExam({
+    subject: row.subject ?? '',
+    questionNo: row.question_no ?? '',
     statement: row.statement ?? '',
     choices,
   });
@@ -173,6 +175,8 @@ function inferExamFromCsvRow(row) {
 
 function inferExamFromBundleRow(row) {
   return inferExam({
+    subject: row.subject ?? '',
+    questionNo: row.question_no ?? '',
     statement: row.statement ?? '',
     choices: Array.isArray(row.choices) ? row.choices.map((choice) => choice?.text ?? '') : [],
   });
@@ -181,6 +185,10 @@ function inferExamFromBundleRow(row) {
 function inferExam(question) {
   const statement = normalizeText(question.statement);
   const choices = question.choices.map(normalizeText).filter(Boolean);
+
+  if (isKanteihyokaTableCalculation(question)) {
+    return { exam: 'calc_numeric', reason: 'kanteihyoka question 39/40 table calculation' };
+  }
 
   if (hasFillBlankPrompt(statement)) {
     return { exam: 'fill_blank', reason: 'fill-blank prompt' };
@@ -234,6 +242,17 @@ function isIrohaCombinationChoice(choice) {
 
 function hasFillBlankPrompt(statement) {
   return /空欄|穴埋め|[（(][ 　]*[イロハニホ][ 　]*[）)]/.test(statement);
+}
+
+function isKanteihyokaTableCalculation(question) {
+  return normalizeText(question.subject) === '不動産の鑑定評価に関する理論'
+    && [39, 40].includes(Number(question.questionNo))
+    && hasMarkdownTable(question.statement ?? '');
+}
+
+function hasMarkdownTable(statement) {
+  const text = String(statement ?? '').replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+  return /(^|\n)\|[^|\n]+\|/.test(text) && /(^|\n)\|[-:| ]+\|/.test(text);
 }
 
 function isNumericCalculation(statement, choices) {
